@@ -1,29 +1,34 @@
 ﻿using UnityEngine;
-using UnityEngine.EventSystems;
 
 namespace Michsky.UI.Frost
 {
-    public class FriendsPanelAnim : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    public class FriendsPanelAnim : MonoBehaviour
     {
         private Animator panelAnimator;
         [Header("SETTINGS")]
         public bool isConsole;
-
-        bool isOn;
+        private bool isOpen = false;
+        [SerializeField] private RectTransform ExpandIcon;
 
         void Start()
         {
-            panelAnimator = this.GetComponent<Animator>();
+            panelAnimator = GetComponent<Animator>();
         }
 
-        public void OnPointerEnter(PointerEventData eventData)
+        public void Expand_Collapse()
         {
-            panelAnimator.Play("Friends In");
-        }
-
-        public void OnPointerExit(PointerEventData eventData)
-        {
-            panelAnimator.Play("Friends Out");
+            if (isOpen == false)
+            {
+                panelAnimator.Play("Friends In");
+                isOpen = true;
+                ExpandIcon.transform.eulerAngles = new Vector3(0, 0, 180);
+            }
+            else
+            {
+                panelAnimator.Play("Friends Out");
+                isOpen = false;
+                ExpandIcon.transform.eulerAngles = new Vector3(0, 0, 0);
+            }
         }
     }
 }
