@@ -10,14 +10,13 @@ using UnityEngine;
 
 public class SocialLoginManager : MonoBehaviour
 {
-    private readonly string webClientId = "543189817157-l9aeb9kc7qgamf84tl23bus6rk25q7e8.apps.googleusercontent.com";
+    private readonly string webClientId = "1013499565612-oto0j58l915sbmcplota9a3evbpugev2.apps.googleusercontent.com";
     private GoogleSignInConfiguration configuration;
     private Firebase.DependencyStatus dependencyStatus = Firebase.DependencyStatus.UnavailableOther;
     private FirebaseAuth auth;
     private FirebaseUser user;
 
-    private bool m_IsRecovery = false;
-    private bool IsAskedForLogin = false;
+    [SerializeField] private GameObject m_LoadingBar;
 
     private void Awake()
     {
@@ -78,23 +77,15 @@ public class SocialLoginManager : MonoBehaviour
         OnGoogleSignIn();
     }
 
-    public void RecoveryButton_Clicked()
-    {
-        m_IsRecovery = true;
-
-        //ShowSocialLoginPanel();
-    }
-
     private void OnGoogleSignIn()
     {
-        //m_LoadingPanel.SetActive(true);
+        m_LoadingBar.GetComponent<CanvasGroup>().alpha = 1;
 
         GoogleSignIn.Configuration = configuration;
         GoogleSignIn.Configuration.UseGameSignIn = false;
         GoogleSignIn.Configuration.RequestIdToken = true;
 
-        GoogleSignIn.DefaultInstance.SignIn().ContinueWith(
-          OnGoogleAuthenticationFinished);
+        GoogleSignIn.DefaultInstance.SignIn().ContinueWith(OnGoogleAuthenticationFinished);
     }
 
     private void OnGoogleAuthenticationFinished(Task<GoogleSignInUser> task)
@@ -106,17 +97,17 @@ public class SocialLoginManager : MonoBehaviour
                 if (enumerator.MoveNext())
                 {
                     GoogleSignIn.SignInException error = (GoogleSignIn.SignInException)enumerator.Current;
-                    //m_LoadingPanel.SetActive(false);
+                    m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
                 }
                 else
                 {
-                    //m_LoadingPanel.SetActive(false);
+                    m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
                 }
             }
         }
         else if (task.IsCanceled)
         {
-            //m_LoadingPanel.SetActive(false);
+            m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
         }
         else
         {
@@ -125,26 +116,25 @@ public class SocialLoginManager : MonoBehaviour
             {
                 if (t.IsCanceled)
                 {
-                    //m_LoadingPanel.SetActive(false);
+                    m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
                     return;
                 }
 
                 if (t.IsFaulted)
                 {
-                    //m_LoadingPanel.SetActive(false);
+                    m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
                     return;
                 }
 
                 user = auth.CurrentUser;
 
-                PlayerPrefs.SetString("UserID", user.UserId);
-                //PlayerPrefs.SetInt("SocialPlatform", (int)SOCIAL_PLATFORM.Google);
-                PlayerPrefs.SetInt("IsLoggedIn", 1);
+                Debug.Log("UserID: " + user.UserId + " UserEmail: " + user.Email + " ProviderID: " + user.ProviderId);
 
-                if (m_IsRecovery == false)
-                    SetUserPurchasedState();
-                else
-                    GetUserPurchasedState();
+                //PlayerPrefs.SetString("UserID", user.UserId);
+                //PlayerPrefs.SetInt("SocialPlatform", (int)SOCIAL_PLATFORM.Google);
+                //PlayerPrefs.SetInt("IsLoggedIn", 1);
+
+                //GetProfileInfo();
             });
         }
 
@@ -160,7 +150,7 @@ public class SocialLoginManager : MonoBehaviour
 
     private void OnFacebookSignIn()
     {
-        //m_LoadingPanel.SetActive(true);
+        m_LoadingBar.GetComponent<CanvasGroup>().alpha = 1;
 
         FB.LogInWithReadPermissions(new List<string>() { "public_profile", "email" }, OnFacebookAuthenticationFinished);
     }
@@ -178,7 +168,7 @@ public class SocialLoginManager : MonoBehaviour
         else
         {
             Debug.Log("User cancelled login");
-            //m_LoadingPanel.SetActive(false);
+            m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
         }
 
         //CloseSocialLoginPanel();
@@ -193,26 +183,25 @@ public class SocialLoginManager : MonoBehaviour
             if (task.IsCanceled)
             {
                 Debug.Log("SignInWithCredentialAsync was canceled.");
-                //m_LoadingPanel.SetActive(false);
+                m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
                 return;
             }
             if (task.IsFaulted)
             {
                 Debug.Log("SignInWithCredentialAsync encountered an error: " + task.Exception);
-                //m_LoadingPanel.SetActive(false);
+                m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
                 return;
             }
 
             user = auth.CurrentUser;
 
-            PlayerPrefs.SetString("UserID", user.UserId);
-            //PlayerPrefs.SetInt("SocialPlatform", (int)SOCIAL_PLATFORM.Facebook);
-            PlayerPrefs.SetInt("IsLoggedIn", 1);
+            Debug.Log("UserID: " + user.UserId + " UserEmail: " + user.Email + " ProviderID: " + user.ProviderId);
 
-            if (m_IsRecovery == false)
-                SetUserPurchasedState();
-            else
-                GetUserPurchasedState();
+            //PlayerPrefs.SetString("UserID", user.UserId);
+            //PlayerPrefs.SetInt("SocialPlatform", (int)SOCIAL_PLATFORM.Facebook);
+            //PlayerPrefs.SetInt("IsLoggedIn", 1);
+
+            //GetProfileInfo();
         });
     }
 
@@ -229,7 +218,7 @@ public class SocialLoginManager : MonoBehaviour
                 //&& PlayerPrefs.GetInt("SocialPlatform", -1) == (int)SOCIAL_PLATFORM.Facebook
                 && PlayerPrefs.GetString("UserID", string.Empty) != string.Empty)
             {
-                //m_LoadingPanel.SetActive(true);
+                m_LoadingBar.GetComponent<CanvasGroup>().alpha = 1;
                 FacebookAuth(AccessToken.CurrentAccessToken.TokenString);
             }
             else
@@ -256,7 +245,7 @@ public class SocialLoginManager : MonoBehaviour
     }
     #endregion
 
-    private void SetUserPurchasedState()
+    private void SetProfileInfo()
     {
         DatabaseReference reference = FirebaseDatabase.DefaultInstance.GetReference("CoinPurchase");
 
@@ -269,7 +258,7 @@ public class SocialLoginManager : MonoBehaviour
               {
               }
 
-              //m_LoadingPanel.SetActive(false);
+              m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
           });
     }
 
@@ -320,7 +309,7 @@ public class SocialLoginManager : MonoBehaviour
         return TransactionResult.Success(mutableData);
     }
 
-    private void GetUserPurchasedState()
+    private void GetProfileInfo()
     {
         DatabaseReference reference = FirebaseDatabase.DefaultInstance.GetReference("CoinPurchase");
 
@@ -333,7 +322,7 @@ public class SocialLoginManager : MonoBehaviour
               {
               }
 
-              //m_LoadingPanel.SetActive(false);
+              m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
           });
     }
 

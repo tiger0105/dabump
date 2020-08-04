@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>1013499565612-t262598gl8cru2lmadf554h2eee5foqa.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.1013499565612-t262598gl8cru2lmadf554h2eee5foqa</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>1013499565612-lc9cfae9fa9cmfs2iq0uo16ik36ctufl.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyCb96MLVSgb4nuBwxpZ3FP32T9m-Hd0bXQ</string>
+	<key>GCM_SENDER_ID</key>
+	<string>1013499565612</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.lacey.dabump</string>
+	<key>PROJECT_ID</key>
+	<string>dabump-8c59c</string>
+	<key>STORAGE_BUCKET</key>
+	<string>dabump-8c59c.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:1013499565612:ios:2098a5d0b95fb5ec846389</string>
+	<key>DATABASE_URL</key>
+	<string>https://dabump-8c59c.firebaseio.com</string>
+</dict>
+</plist>
