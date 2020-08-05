@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "1013499565612",
+    "firebase_url": "https://dabump-8c59c.firebaseio.com",
+    "project_id": "dabump-8c59c",
+    "storage_bucket": "dabump-8c59c.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1013499565612:android:4cc69cadf1f54936846389",
+        "android_client_info": {
+          "package_name": "com.lacey.dabump"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1013499565612-lc9cfae9fa9cmfs2iq0uo16ik36ctufl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.lacey.dabump",
+            "certificate_hash": "0702f26ab873fec78b1f32b608897aba220f9a5e"
+          }
+        },
+        {
+          "client_id": "1013499565612-oto0j58l915sbmcplota9a3evbpugev2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDHsjPM-a679Y6X6KCxMel_1ujjOWJguZ8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1013499565612-oto0j58l915sbmcplota9a3evbpugev2.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1013499565612-t262598gl8cru2lmadf554h2eee5foqa.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.lacey.dabump"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

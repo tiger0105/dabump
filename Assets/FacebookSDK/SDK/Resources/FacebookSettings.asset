@@ -9,14 +9,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: -2115301841, guid: b96583fe9d2614f3081becbbd70cd55f, type: 3}
+  m_Script: {fileID: -2115301841, guid: c49f2b3ca212b47fc9cd8ce655177c89, type: 3}
   m_Name: FacebookSettings
   m_EditorClassIdentifier: 
   selectedAppIndex: 0
   clientTokens:
-  - ad81dac554a5dc27ba8a5a6f49a47a21
+  - d3c154edf6d70496dae9a74c9f810d99
   appIds:
-  - 1634422723396686
+  - '1634422723396686 '
   appLabels:
   - DaBump
   cookie: 1
