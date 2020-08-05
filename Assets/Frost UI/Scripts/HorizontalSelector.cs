@@ -14,7 +14,7 @@ namespace Michsky.UI.ModernUIPack
         private Animator selectorAnimator;
 
         [Header("SETTINGS")]
-        private int index = 0;
+        public int index = 0;
         public int defaultIndex = 0;
 
         [Header("ELEMENTS")]

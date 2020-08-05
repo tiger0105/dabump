@@ -130,7 +130,9 @@ public class SocialLoginManager : MonoBehaviour
 
                 Debug.Log("UserID: " + user.UserId + " UserEmail: " + user.Email + " ProviderID: " + user.ProviderId);
 
-                //PlayerPrefs.SetString("UserID", user.UserId);
+                PlayerPrefs.SetString("UserID", user.UserId);
+                PlayerPrefs.SetString("UserName", user.DisplayName);
+                PlayerPrefs.SetString("UserEmail", user.Email);
                 //PlayerPrefs.SetInt("SocialPlatform", (int)SOCIAL_PLATFORM.Google);
                 //PlayerPrefs.SetInt("IsLoggedIn", 1);
 
