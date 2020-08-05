@@ -1,6 +1,7 @@
 
 using System;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
@@ -25,6 +26,8 @@ public class ColorPicker : MonoBehaviour, IPointerDownHandler, IDragHandler, IPo
 
     private RectTransform rectTransform;
     private Image image;
+
+    public UnityEvent action;
 
     float h, s, v;
 
@@ -144,6 +147,7 @@ public class ColorPicker : MonoBehaviour, IPointerDownHandler, IDragHandler, IPo
         image.material.SetVector(_HSV, new Vector3(h, s, v));
 
         onColorChanged?.Invoke(color);
+        action.Invoke();
     }
 
     private void OnDestroy()

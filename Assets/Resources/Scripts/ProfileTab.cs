@@ -1,5 +1,7 @@
-﻿using Michsky.UI.ModernUIPack;
-using System.Security.Cryptography;
+﻿using Firebase.Database;
+using Firebase.Extensions;
+using Michsky.UI.ModernUIPack;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -27,14 +29,23 @@ public class ProfileTab : MonoBehaviour
 
     private void Start()
     {
+        m_SaveProfileLoadingBar.SetActive(true);
         LoadProfileTab();
+    }
+
+    private Color SetInvertedColor(Color original)
+    {
+        return new Color(1 - original.r, 1 - original.g, 1 - original.b);
     }
 
     public void LoadProfileTab()
     {
         m_NameInputField.text = PlayerPrefs.GetString("UserName", string.Empty);
         m_CardName.text = m_NameInputField.text;
+        m_CardName.color = SetInvertedColor(m_CardTopColor.color);
         m_CardPosition.text = m_TeamPositionSelector.elements[m_TeamPositionSelector.index];
+        m_CardPosition.color = SetInvertedColor(m_CardBottomColor.color);
+        m_SaveProfileLoadingBar.SetActive(false);
     }
 
     public void OnNameInputFieldChanged()
@@ -45,6 +56,16 @@ public class ProfileTab : MonoBehaviour
     public void OnTeamPositionChanged()
     {
         m_CardPosition.text = m_TeamPositionSelector.elements[m_TeamPositionSelector.index];
+    }
+
+    public void OnCardTopColorUpdated()
+    {
+        m_CardName.color = SetInvertedColor(m_CardTopColor.color);
+    }
+
+    public void OnCardBottomColorUpdated()
+    {
+        m_CardPosition.color = SetInvertedColor(m_CardBottomColor.color);
     }
 
     public void OnAvatarUploadButtonClicked()
@@ -72,5 +93,133 @@ public class ProfileTab : MonoBehaviour
                 Destroy(texture, 5f);
             }
         }, "Select a PNG image", "image/png");
+    }
+
+    public void SetProfileInfo()
+    {
+        m_SaveProfileLoadingBar.SetActive(true);
+
+        DatabaseReference reference = FirebaseDatabase.DefaultInstance.GetReference("Profile");
+
+        reference.RunTransaction(SetProfileTransaction)
+          .ContinueWithOnMainThread(task => {
+              if (task.Exception != null)
+              {
+              }
+              else if (task.IsCompleted)
+              {
+              }
+
+              m_SaveProfileLoadingBar.SetActive(false);
+          });
+    }
+
+    private TransactionResult SetProfileTransaction(MutableData mutableData)
+    {
+        if (!(mutableData.Value is List<object> userData))
+        {
+            userData = new List<object>();
+        }
+
+        string userId = PlayerPrefs.GetString("UserID", string.Empty);
+        if (userId == string.Empty)
+        {
+            return TransactionResult.Abort();
+        }
+
+        bool userExists = false;
+
+        for (int i = 0; i < userData.Count; i++)
+        {
+            string uId = (string)((Dictionary<string, object>)userData[i])["UserID"];
+            if (uId == userId)
+            {
+                userExists = true;
+
+                Dictionary<string, object> newItem = new Dictionary<string, object>
+                {
+                    ["UserID"] = userId,
+                    ["Name"] = m_NameInputField.text,
+                    ["TeamPosition"] = m_CardPosition.text,
+                    ["CardTopColor"] = ColorUtility.ToHtmlStringRGB(m_CardTopColor.color),
+                    ["CardBottomColor"] = ColorUtility.ToHtmlStringRGB(m_CardBottomColor.color),
+                };
+
+                userData[i] = newItem;
+            }
+        }
+
+        if (!userExists)
+        {
+            Dictionary<string, object> newItem = new Dictionary<string, object>
+            {
+                ["UserID"] = userId,
+                ["Name"] = m_NameInputField.text,
+                ["TeamPosition"] = m_CardPosition.text,
+                ["CardTopColor"] = ColorUtility.ToHtmlStringRGB(m_CardTopColor.color),
+                ["CardBottomColor"] = ColorUtility.ToHtmlStringRGB(m_CardBottomColor.color),
+            };
+
+            userData.Add(newItem);
+        }
+
+        mutableData.Value = userData;
+        return TransactionResult.Success(mutableData);
+    }
+
+    public void GetProfileInfo()
+    {
+        m_SaveProfileLoadingBar.SetActive(true);
+
+        DatabaseReference reference = FirebaseDatabase.DefaultInstance.GetReference("Profile");
+
+        reference.RunTransaction(GetProfileTransaction)
+          .ContinueWithOnMainThread(task => {
+              if (task.Exception != null)
+              {
+              }
+              else if (task.IsCompleted)
+              {
+              }
+
+              m_SaveProfileLoadingBar.SetActive(false);
+          });
+    }
+
+    private TransactionResult GetProfileTransaction(MutableData mutableData)
+    {
+        if (!(mutableData.Value is List<object> userData))
+        {
+            userData = new List<object>();
+        }
+
+        string userId = PlayerPrefs.GetString("UserID", string.Empty);
+        if (userId == string.Empty)
+        {
+            return TransactionResult.Abort();
+        }
+
+        for (int i = 0; i < userData.Count; i++)
+        {
+            string uId = (string)((Dictionary<string, object>)userData[i])["UserID"];
+            if (uId == userId)
+            {
+                string teamPosition = (string)((Dictionary<string, object>)userData[i])["TeamPosition"];
+                string cardTopColor = (string)((Dictionary<string, object>)userData[i])["CardTopColor"];
+                string cardBottomColor = (string)((Dictionary<string, object>)userData[i])["CardBottomColor"];
+                _ = m_CardTopColor.color;
+                ColorUtility.TryParseHtmlString(cardTopColor, out Color topColor);
+                m_CardTopColor.color = topColor;
+                _ = m_CardBottomColor.color;
+                ColorUtility.TryParseHtmlString(cardBottomColor, out Color bottomColor);
+                m_CardBottomColor.color = bottomColor;
+                int index = m_TeamPositionSelector.elements.IndexOf(teamPosition);
+                m_TeamPositionSelector.index = index;
+                m_CardPosition.text = m_TeamPositionSelector.elements[index];
+                m_CardPosition.color = SetInvertedColor(m_CardBottomColor.color);
+            }
+        }
+
+        return TransactionResult.Success(mutableData);
     }
 }

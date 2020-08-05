@@ -24,10 +24,15 @@ public class SocialLoginManager : MonoBehaviour
     [SerializeField] private GameObject m_MainPanel;
     [SerializeField] private GameObject m_MenuManager;
 
-    public TextMeshProUGUI debugText;
+    [SerializeField] private ProfileTab m_ProfileTab;
+    [SerializeField] private AccountTab m_AccountTab;
+
+    public static SocialLoginManager Instance;
 
     private void Awake()
     {
+        Instance = this;
+
         configuration = new GoogleSignInConfiguration
         {
             WebClientId = webClientId,
@@ -42,12 +47,12 @@ public class SocialLoginManager : MonoBehaviour
             dependencyStatus = task.Result;
             if (dependencyStatus == Firebase.DependencyStatus.Available)
             {
-                DebugConsole("Firebase initializing...");
+                Debug.Log("Firebase initializing...");
                 InitializeFirebase();
             }
             else
             {
-                DebugConsole("Could not resolve all Firebase dependencies: " + dependencyStatus);
+                Debug.Log("Could not resolve all Firebase dependencies: " + dependencyStatus);
             }
         });
     }
@@ -77,6 +82,7 @@ public class SocialLoginManager : MonoBehaviour
         if (auth != null)
             auth.StateChanged -= AuthStateChanged;
         auth = null;
+        Instance = null;
     }
 
     #region Google SignIn
@@ -128,19 +134,19 @@ public class SocialLoginManager : MonoBehaviour
                 {
                     GoogleSignIn.SignInException error = (GoogleSignIn.SignInException)enumerator.Current;
                     HideLoginLoadingBar();
-                    DebugConsole("OnGoogleAuthenticationFinished " + error.ToString());
+                    Debug.Log("OnGoogleAuthenticationFinished " + error.ToString());
                 }
                 else
                 {
                     HideLoginLoadingBar();
-                    DebugConsole("OnGoogleAuthenticationFinished enumerator.MoveNext() task.IsFaulted");
+                    Debug.Log("OnGoogleAuthenticationFinished enumerator.MoveNext() task.IsFaulted");
                 }
             }
         }
         else if (task.IsCanceled)
         {
             HideLoginLoadingBar();
-            DebugConsole("OnGoogleAuthenticationFinished task.IsCanceled");
+            Debug.Log("OnGoogleAuthenticationFinished task.IsCanceled");
         }
         else
         {
@@ -150,14 +156,14 @@ public class SocialLoginManager : MonoBehaviour
                 if (t.IsCanceled)
                 {
                     HideLoginLoadingBar();
-                    DebugConsole("OnGoogleAuthenticationFinished t.IsCanceled");
+                    Debug.Log("OnGoogleAuthenticationFinished t.IsCanceled");
                     return;
                 }
 
                 if (t.IsFaulted)
                 {
                     HideLoginLoadingBar();
-                    DebugConsole("OnGoogleAuthenticationFinished t.IsFaulted");
+                    Debug.Log("OnGoogleAuthenticationFinished t.IsFaulted");
                     return;
                 }
 
@@ -170,6 +176,7 @@ public class SocialLoginManager : MonoBehaviour
                 PlayerPrefs.SetInt("IsLoggedIn", 1);
 
                 ProfileTab.Instance.LoadProfileTab();
+                ProfileTab.Instance.GetProfileInfo();
                 AccountTab.Instance.LoadAccountTab();
 
                 SwitchToMainPanel();
@@ -198,16 +205,16 @@ public class SocialLoginManager : MonoBehaviour
     {
         if (FB.IsLoggedIn)
         {
-            DebugConsole("FB Logged In.");
-            DebugConsole("Start Firebase Auth");
-            DebugConsole("IdToken: " + AccessToken.CurrentAccessToken.TokenString);
+            Debug.Log("FB Logged In.");
+            Debug.Log("Start Firebase Auth");
+            Debug.Log("IdToken: " + AccessToken.CurrentAccessToken.TokenString);
 
             FacebookAuth(AccessToken.CurrentAccessToken.TokenString);
         }
         else
         {
             HideLoginLoadingBar();
-            DebugConsole("User cancelled login");
+            Debug.Log("User cancelled login");
         }
     }
 
@@ -220,13 +227,13 @@ public class SocialLoginManager : MonoBehaviour
             if (task.IsCanceled)
             {
                 HideLoginLoadingBar();
-                DebugConsole("SignInWithCredentialAsync was canceled.");
+                Debug.Log("SignInWithCredentialAsync was canceled.");
                 return;
             }
             if (task.IsFaulted)
             {
                 HideLoginLoadingBar();
-                DebugConsole("SignInWithCredentialAsync encountered an error: " + task.Exception);
+                Debug.Log("SignInWithCredentialAsync encountered an error: " + task.Exception);
                 return;
             }
 
@@ -239,6 +246,7 @@ public class SocialLoginManager : MonoBehaviour
             PlayerPrefs.SetInt("IsLoggedIn", 1);
 
             ProfileTab.Instance.LoadProfileTab();
+            ProfileTab.Instance.GetProfileInfo();
             AccountTab.Instance.LoadAccountTab();
 
             SwitchToMainPanel();
@@ -250,12 +258,12 @@ public class SocialLoginManager : MonoBehaviour
 
     private void InitCallback()
     {
-        DebugConsole("FB Init done.");
+        Debug.Log("FB Init done.");
 
         if (FB.IsLoggedIn)
         {
-            DebugConsole(string.Format("FB Logged In. TokenString:" + AccessToken.CurrentAccessToken.TokenString));
-            DebugConsole(AccessToken.CurrentAccessToken.ToString());
+            Debug.Log(string.Format("FB Logged In. TokenString:" + AccessToken.CurrentAccessToken.TokenString));
+            Debug.Log(AccessToken.CurrentAccessToken.ToString());
 
             if (PlayerPrefs.GetInt("IsLoggedIn", 0) == 1
                 && PlayerPrefs.GetString("SocialPlatform", "Google") == "Facebook"
@@ -265,12 +273,12 @@ public class SocialLoginManager : MonoBehaviour
             }
             else
             {
-                DebugConsole("User not yet loged FB or loged out");
+                Debug.Log("User not yet loged FB or loged out");
             }
         }
         else
         {
-            DebugConsole("User cancelled login");
+            Debug.Log("User cancelled login");
         }
     }
 
@@ -287,137 +295,43 @@ public class SocialLoginManager : MonoBehaviour
     }
     #endregion
 
-    private void SetProfileInfo()
+    public void UpdateDisplayName(string name)
     {
-        DatabaseReference reference = FirebaseDatabase.DefaultInstance.GetReference("CoinPurchase");
-
-        reference.RunTransaction(SetPurchaseStateTransaction)
-          .ContinueWithOnMainThread(task => {
-              if (task.Exception != null)
-              {
-              }
-              else if (task.IsCompleted)
-              {
-              }
-
-              HideLoginLoadingBar();
-          });
-    }
-
-    private TransactionResult SetPurchaseStateTransaction(MutableData mutableData)
-    {
-        if (!(mutableData.Value is List<object> userData))
+        if (user != null)
         {
-            userData = new List<object>();
-        }
-
-        string userId = PlayerPrefs.GetString("UserID", string.Empty);
-        if (userId == string.Empty)
-        {
-            return TransactionResult.Abort();
-        }
-
-        bool userExists = false;
-
-        for (int i = 0; i < userData.Count; i++)
-        {
-            string uId = (string)((Dictionary<string, object>)userData[i])["UserID"];
-            if (uId == userId)
+            UserProfile userProfile = new UserProfile
             {
-                userExists = true;
-
-                Dictionary<string, object> newItem = new Dictionary<string, object>
-                {
-                    ["UserID"] = userId,
-                    ["IsPurchased"] = (PlayerPrefs.GetInt("IsPurchased", 0) == 0) ? false : true
-                };
-
-                userData[i] = newItem;
-            }
-        }
-
-        if (!userExists)
-        {
-            Dictionary<string, object> newItem = new Dictionary<string, object>
-            {
-                ["UserID"] = userId,
-                ["IsPurchased"] = (PlayerPrefs.GetInt("IsPurchased", 0) == 0) ? false : true
+                DisplayName = name
             };
-
-            userData.Add(newItem);
-        }
-
-        mutableData.Value = userData;
-        return TransactionResult.Success(mutableData);
-    }
-
-    private void GetProfileInfo()
-    {
-        DatabaseReference reference = FirebaseDatabase.DefaultInstance.GetReference("CoinPurchase");
-
-        reference.RunTransaction(GetPurchaseStateTransaction)
-          .ContinueWithOnMainThread(task => {
-              if (task.Exception != null)
-              {
-              }
-              else if (task.IsCompleted)
-              {
-              }
-
-              HideLoginLoadingBar();
-          });
-    }
-
-    private TransactionResult GetPurchaseStateTransaction(MutableData mutableData)
-    {
-        if (!(mutableData.Value is List<object> userData))
-        {
-            userData = new List<object>();
-        }
-
-        string userId = PlayerPrefs.GetString("UserID", string.Empty);
-        if (userId == string.Empty)
-        {
-            return TransactionResult.Abort();
-        }
-
-        bool userExists = false;
-
-        for (int i = 0; i < userData.Count; i++)
-        {
-            string uId = (string)((Dictionary<string, object>)userData[i])["UserID"];
-            if (uId == userId)
+            user.UpdateUserProfileAsync(userProfile).ContinueWith(t =>
             {
-                userExists = true;
-
-                bool isPurchased = (bool)((Dictionary<string, object>)userData[i])["IsPurchased"];
-
-                PlayerPrefs.SetInt("IsPurchased", isPurchased == false ? 0 : 1);
-
-                if (isPurchased == true)
+                if (t.IsCanceled)
                 {
-                    //ShowPanel(3);
+                    Debug.Log("OnGoogleAuthenticationFinished t.IsCanceled");
+                    return;
                 }
-            }
+
+                if (t.IsFaulted)
+                {
+                    Debug.Log("OnGoogleAuthenticationFinished t.IsFaulted");
+                    return;
+                }
+
+                //user = auth.CurrentUser;
+
+                //PlayerPrefs.SetString("UserID", user.UserId);
+                //PlayerPrefs.SetString("UserName", user.DisplayName);
+                //PlayerPrefs.SetString("UserEmail", user.Email);
+                //PlayerPrefs.SetString("SocialPlatform", "Google");
+                //PlayerPrefs.SetInt("IsLoggedIn", 1);
+
+                //ProfileTab.Instance.LoadProfileTab();
+                //ProfileTab.Instance.GetProfileInfo();
+                //AccountTab.Instance.LoadAccountTab();
+
+                //SwitchToMainPanel();
+                //return;
+            });
+
         }
-
-        if (!userExists)
-        {
-            Dictionary<string, object> newItem = new Dictionary<string, object>
-            {
-                ["UserID"] = userId,
-                ["IsPurchased"] = false
-            };
-
-            userData.Add(newItem);
-            mutableData.Value = userData;
-        }
-
-        return TransactionResult.Success(mutableData);
-    }
-
-    private void DebugConsole(string text)
-    {
-        debugText.text += text + "\n";
-    }
 }

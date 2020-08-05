@@ -14,6 +14,11 @@ public class AccountTab : MonoBehaviour
 
     public static AccountTab Instance;
 
+    private void Awake()
+    {
+        Instance = this;
+    }
+
     private void Start()
     {
         LoadAccountTab();
