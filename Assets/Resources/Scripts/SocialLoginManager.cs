@@ -6,6 +6,7 @@ using Google;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using TMPro;
 using UnityEngine;
 
 public class SocialLoginManager : MonoBehaviour
@@ -17,6 +18,8 @@ public class SocialLoginManager : MonoBehaviour
     private FirebaseUser user;
 
     [SerializeField] private GameObject m_LoadingBar;
+
+    public TextMeshProUGUI debugText;
 
     private void Awake()
     {
@@ -34,12 +37,12 @@ public class SocialLoginManager : MonoBehaviour
             dependencyStatus = task.Result;
             if (dependencyStatus == Firebase.DependencyStatus.Available)
             {
-                Debug.Log("Firebase initializing...");
+                DebugConsole("Firebase initializing...");
                 InitializeFirebase();
             }
             else
             {
-                Debug.Log("Could not resolve all Firebase dependencies: " + dependencyStatus);
+                DebugConsole("Could not resolve all Firebase dependencies: " + dependencyStatus);
             }
         });
     }
@@ -98,16 +101,19 @@ public class SocialLoginManager : MonoBehaviour
                 {
                     GoogleSignIn.SignInException error = (GoogleSignIn.SignInException)enumerator.Current;
                     m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
+                    DebugConsole("OnGoogleAuthenticationFinished " + error.ToString());
                 }
                 else
                 {
                     m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
+                    DebugConsole("OnGoogleAuthenticationFinished enumerator.MoveNext() task.IsFaulted");
                 }
             }
         }
         else if (task.IsCanceled)
         {
             m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
+            DebugConsole("OnGoogleAuthenticationFinished task.IsCanceled");
         }
         else
         {
@@ -117,22 +123,27 @@ public class SocialLoginManager : MonoBehaviour
                 if (t.IsCanceled)
                 {
                     m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
+                    DebugConsole("OnGoogleAuthenticationFinished t.IsCanceled");
                     return;
                 }
 
                 if (t.IsFaulted)
                 {
                     m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
+                    DebugConsole("OnGoogleAuthenticationFinished t.IsFaulted");
                     return;
                 }
 
                 user = auth.CurrentUser;
 
-                Debug.Log("UserID: " + user.UserId + " UserEmail: " + user.Email + " ProviderID: " + user.ProviderId);
+                DebugConsole("UserID: " + user.UserId + " UserEmail: " + user.Email + " ProviderID: " + user.ProviderId);
 
                 PlayerPrefs.SetString("UserID", user.UserId);
                 PlayerPrefs.SetString("UserName", user.DisplayName);
                 PlayerPrefs.SetString("UserEmail", user.Email);
+
+                m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
+                ProfileTab.Instance.LoadProfileTab();
                 //PlayerPrefs.SetInt("SocialPlatform", (int)SOCIAL_PLATFORM.Google);
                 //PlayerPrefs.SetInt("IsLoggedIn", 1);
 
@@ -161,16 +172,15 @@ public class SocialLoginManager : MonoBehaviour
     {
         if (FB.IsLoggedIn)
         {
-            Debug.Log("FB Logged In.");
-            Debug.Log("Start Firebase Auth");
-            Debug.Log("IdToken: " + AccessToken.CurrentAccessToken.TokenString);
+            DebugConsole("FB Logged In.");
+            DebugConsole("Start Firebase Auth");
+            DebugConsole("IdToken: " + AccessToken.CurrentAccessToken.TokenString);
 
             FacebookAuth(AccessToken.CurrentAccessToken.TokenString);
         }
         else
         {
-            Debug.Log("User cancelled login");
-            m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
+            DebugConsole("User cancelled login");
         }
 
         //CloseSocialLoginPanel();
@@ -184,20 +194,20 @@ public class SocialLoginManager : MonoBehaviour
         {
             if (task.IsCanceled)
             {
-                Debug.Log("SignInWithCredentialAsync was canceled.");
-                m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
+                DebugConsole("SignInWithCredentialAsync was canceled.");
+                //m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
                 return;
             }
             if (task.IsFaulted)
             {
-                Debug.Log("SignInWithCredentialAsync encountered an error: " + task.Exception);
-                m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
+                DebugConsole("SignInWithCredentialAsync encountered an error: " + task.Exception);
+                //m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
                 return;
             }
 
             user = auth.CurrentUser;
 
-            Debug.Log("UserID: " + user.UserId + " UserEmail: " + user.Email + " ProviderID: " + user.ProviderId);
+            DebugConsole("UserID: " + user.UserId + " UserEmail: " + user.Email + " ProviderID: " + user.ProviderId);
 
             //PlayerPrefs.SetString("UserID", user.UserId);
             //PlayerPrefs.SetInt("SocialPlatform", (int)SOCIAL_PLATFORM.Facebook);
@@ -209,28 +219,28 @@ public class SocialLoginManager : MonoBehaviour
 
     private void InitCallback()
     {
-        Debug.Log("FB Init done.");
+        DebugConsole("FB Init done.");
 
         if (FB.IsLoggedIn)
         {
-            Debug.Log(string.Format("FB Logged In. TokenString:" + AccessToken.CurrentAccessToken.TokenString));
-            Debug.Log(AccessToken.CurrentAccessToken.ToString());
+            DebugConsole(string.Format("FB Logged In. TokenString:" + AccessToken.CurrentAccessToken.TokenString));
+            DebugConsole(AccessToken.CurrentAccessToken.ToString());
 
             if (PlayerPrefs.GetInt("IsLoggedIn", 0) == 1
                 //&& PlayerPrefs.GetInt("SocialPlatform", -1) == (int)SOCIAL_PLATFORM.Facebook
                 && PlayerPrefs.GetString("UserID", string.Empty) != string.Empty)
             {
-                m_LoadingBar.GetComponent<CanvasGroup>().alpha = 1;
+                //m_LoadingBar.GetComponent<CanvasGroup>().alpha = 1;
                 FacebookAuth(AccessToken.CurrentAccessToken.TokenString);
             }
             else
             {
-                Debug.Log("User not yet loged FB or loged out");
+                DebugConsole("User not yet loged FB or loged out");
             }
         }
         else
         {
-            Debug.Log("User cancelled login");
+            DebugConsole("User cancelled login");
         }
     }
 
@@ -374,5 +384,10 @@ public class SocialLoginManager : MonoBehaviour
         }
 
         return TransactionResult.Success(mutableData);
+    }
+
+    private void DebugConsole(string text)
+    {
+        debugText.text += text + "\n";
     }
 }

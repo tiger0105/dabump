@@ -17,13 +17,18 @@ public class ProfileTab : MonoBehaviour
     [SerializeField] private Button m_SaveProfileButton;
     [SerializeField] private GameObject m_SaveProfileLoadingBar;
 
+    public static ProfileTab Instance;
+
+    public TextMeshProUGUI debugText;
+
     private void Start()
     {
         LoadProfileTab();
     }
 
-    private void LoadProfileTab()
+    public void LoadProfileTab()
     {
+        DebugConsole("LoadProfileTab");
         m_NameInputField.text = PlayerPrefs.GetString("UserName", string.Empty);
         m_CardName.text = m_NameInputField.text;
         m_CardPosition.text = m_TeamPositionSelector.elements[m_TeamPositionSelector.index];
@@ -51,13 +56,13 @@ public class ProfileTab : MonoBehaviour
     {
         NativeGallery.Permission permission = NativeGallery.GetImageFromGallery((path) =>
         {
-            Debug.Log("Image path: " + path);
+            DebugConsole("Image path: " + path);
             if (path != null)
             {
                 Texture2D texture = NativeGallery.LoadImageAtPath(path, maxSize);
                 if (texture == null)
                 {
-                    Debug.Log("Couldn't load texture from " + path);
+                    DebugConsole("Couldn't load texture from " + path);
                     return;
                 }
 
@@ -67,6 +72,11 @@ public class ProfileTab : MonoBehaviour
             }
         }, "Select a PNG image", "image/png");
 
-        Debug.Log("Permission result: " + permission);
+        DebugConsole("Permission result: " + permission);
+    }
+
+    private void DebugConsole(string text)
+    {
+        debugText.text += text + "\n";
     }
 }
