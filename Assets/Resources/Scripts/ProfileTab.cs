@@ -1,4 +1,5 @@
 ﻿using Michsky.UI.ModernUIPack;
+using System.Security.Cryptography;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -19,7 +20,10 @@ public class ProfileTab : MonoBehaviour
 
     public static ProfileTab Instance;
 
-    public TextMeshProUGUI debugText;
+    private void Awake()
+    {
+        Instance = this;
+    }
 
     private void Start()
     {
@@ -28,7 +32,6 @@ public class ProfileTab : MonoBehaviour
 
     public void LoadProfileTab()
     {
-        DebugConsole("LoadProfileTab");
         m_NameInputField.text = PlayerPrefs.GetString("UserName", string.Empty);
         m_CardName.text = m_NameInputField.text;
         m_CardPosition.text = m_TeamPositionSelector.elements[m_TeamPositionSelector.index];
@@ -49,20 +52,18 @@ public class ProfileTab : MonoBehaviour
         if (NativeGallery.IsMediaPickerBusy())
             return;
 
-        PickImage(400);
+        PickImage();
     }
 
-    private void PickImage(int maxSize)
+    private void PickImage()
     {
         NativeGallery.Permission permission = NativeGallery.GetImageFromGallery((path) =>
         {
-            DebugConsole("Image path: " + path);
             if (path != null)
             {
-                Texture2D texture = NativeGallery.LoadImageAtPath(path, maxSize);
+                Texture2D texture = NativeGallery.LoadImageAtPath(path);
                 if (texture == null)
                 {
-                    DebugConsole("Couldn't load texture from " + path);
                     return;
                 }
 
@@ -71,12 +72,5 @@ public class ProfileTab : MonoBehaviour
                 Destroy(texture, 5f);
             }
         }, "Select a PNG image", "image/png");
-
-        DebugConsole("Permission result: " + permission);
-    }
-
-    private void DebugConsole(string text)
-    {
-        debugText.text += text + "\n";
     }
 }

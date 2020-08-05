@@ -23,7 +23,7 @@ namespace Michsky.UI.Frost
                 customProperty = "_Size";
             }
 
-            blurMaterial.SetFloat("_Size", 0);
+            blurMaterial.SetFloat("_Size", 3);
         }
 
         IEnumerator BlurIn()
@@ -47,15 +47,16 @@ namespace Michsky.UI.Frost
 
         IEnumerator BlurOut()
         {
+            Debug.Log("sdfds");
             currentBlurValue = blurMaterial.GetFloat("_Size");
 
-            while (currentBlurValue >= 0)
+            while (currentBlurValue >= 3)
             {
                 currentBlurValue -= Time.deltaTime * animationSpeed;
 
-                if (currentBlurValue <= 0)
+                if (currentBlurValue <= 3)
                 {
-                    currentBlurValue = 0;
+                    currentBlurValue = 3;
                 }
 
                 blurMaterial.SetFloat("_Size", currentBlurValue);

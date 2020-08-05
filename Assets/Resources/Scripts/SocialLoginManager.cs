@@ -3,6 +3,7 @@ using Firebase.Auth;
 using Firebase.Database;
 using Firebase.Extensions;
 using Google;
+using Michsky.UI.Frost;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -18,6 +19,10 @@ public class SocialLoginManager : MonoBehaviour
     private FirebaseUser user;
 
     [SerializeField] private GameObject m_LoadingBar;
+    [SerializeField] private GameObject m_SplashScreen;
+    [SerializeField] private GameObject m_Background;
+    [SerializeField] private GameObject m_MainPanel;
+    [SerializeField] private GameObject m_MenuManager;
 
     public TextMeshProUGUI debugText;
 
@@ -80,12 +85,34 @@ public class SocialLoginManager : MonoBehaviour
         OnGoogleSignIn();
     }
 
+    private void ShowLoginLoadingBar()
+    {
+        m_SplashScreen.GetComponent<Animator>().Play("Login to Loading");
+    }
+
+    private void HideLoginLoadingBar()
+    {
+        m_MenuManager.GetComponent<BlurManager>().BlurOutAnim();
+        m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
+    }
+
+    private void SwitchToMainPanel()
+    {
+        m_MenuManager.GetComponent<BlurManager>().BlurOutAnim();
+        m_SplashScreen.GetComponent<Animator>().Play("Panel Out");
+        m_MainPanel.GetComponent<Animator>().Play("Panel Start");
+        m_Background.GetComponent<Animator>().Play("Switch");
+        m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
+    }
+
     private void OnGoogleSignIn()
     {
-        m_LoadingBar.GetComponent<CanvasGroup>().alpha = 1;
+        ShowLoginLoadingBar();
 
         GoogleSignIn.Configuration = configuration;
+#if UNITY_ANDROID && !UNITY_EDITOR
         GoogleSignIn.Configuration.UseGameSignIn = false;
+#endif
         GoogleSignIn.Configuration.RequestIdToken = true;
 
         GoogleSignIn.DefaultInstance.SignIn().ContinueWith(OnGoogleAuthenticationFinished);
@@ -100,19 +127,19 @@ public class SocialLoginManager : MonoBehaviour
                 if (enumerator.MoveNext())
                 {
                     GoogleSignIn.SignInException error = (GoogleSignIn.SignInException)enumerator.Current;
-                    m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
+                    HideLoginLoadingBar();
                     DebugConsole("OnGoogleAuthenticationFinished " + error.ToString());
                 }
                 else
                 {
-                    m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
+                    HideLoginLoadingBar();
                     DebugConsole("OnGoogleAuthenticationFinished enumerator.MoveNext() task.IsFaulted");
                 }
             }
         }
         else if (task.IsCanceled)
         {
-            m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
+            HideLoginLoadingBar();
             DebugConsole("OnGoogleAuthenticationFinished task.IsCanceled");
         }
         else
@@ -122,36 +149,35 @@ public class SocialLoginManager : MonoBehaviour
             {
                 if (t.IsCanceled)
                 {
-                    m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
+                    HideLoginLoadingBar();
                     DebugConsole("OnGoogleAuthenticationFinished t.IsCanceled");
                     return;
                 }
 
                 if (t.IsFaulted)
                 {
-                    m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
+                    HideLoginLoadingBar();
                     DebugConsole("OnGoogleAuthenticationFinished t.IsFaulted");
                     return;
                 }
 
                 user = auth.CurrentUser;
 
-                DebugConsole("UserID: " + user.UserId + " UserEmail: " + user.Email + " ProviderID: " + user.ProviderId);
-
                 PlayerPrefs.SetString("UserID", user.UserId);
                 PlayerPrefs.SetString("UserName", user.DisplayName);
                 PlayerPrefs.SetString("UserEmail", user.Email);
+                PlayerPrefs.SetString("SocialPlatform", "Google");
+                PlayerPrefs.SetInt("IsLoggedIn", 1);
 
-                m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
                 ProfileTab.Instance.LoadProfileTab();
-                //PlayerPrefs.SetInt("SocialPlatform", (int)SOCIAL_PLATFORM.Google);
-                //PlayerPrefs.SetInt("IsLoggedIn", 1);
+                AccountTab.Instance.LoadAccountTab();
 
-                //GetProfileInfo();
+                SwitchToMainPanel();
+                return;
             });
         }
 
-        //CloseSocialLoginPanel();
+        HideLoginLoadingBar();
     }
     #endregion
 
@@ -163,7 +189,7 @@ public class SocialLoginManager : MonoBehaviour
 
     private void OnFacebookSignIn()
     {
-        m_LoadingBar.GetComponent<CanvasGroup>().alpha = 1;
+        ShowLoginLoadingBar();
 
         FB.LogInWithReadPermissions(new List<string>() { "public_profile", "email" }, OnFacebookAuthenticationFinished);
     }
@@ -180,10 +206,9 @@ public class SocialLoginManager : MonoBehaviour
         }
         else
         {
+            HideLoginLoadingBar();
             DebugConsole("User cancelled login");
         }
-
-        //CloseSocialLoginPanel();
     }
 
     private void FacebookAuth(string accessToken)
@@ -194,27 +219,33 @@ public class SocialLoginManager : MonoBehaviour
         {
             if (task.IsCanceled)
             {
+                HideLoginLoadingBar();
                 DebugConsole("SignInWithCredentialAsync was canceled.");
-                //m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
                 return;
             }
             if (task.IsFaulted)
             {
+                HideLoginLoadingBar();
                 DebugConsole("SignInWithCredentialAsync encountered an error: " + task.Exception);
-                //m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
                 return;
             }
 
             user = auth.CurrentUser;
 
-            DebugConsole("UserID: " + user.UserId + " UserEmail: " + user.Email + " ProviderID: " + user.ProviderId);
+            PlayerPrefs.SetString("UserID", user.UserId);
+            PlayerPrefs.SetString("UserName", user.DisplayName);
+            PlayerPrefs.SetString("UserEmail", user.Email);
+            PlayerPrefs.SetString("SocialPlatform", "Facebook");
+            PlayerPrefs.SetInt("IsLoggedIn", 1);
 
-            //PlayerPrefs.SetString("UserID", user.UserId);
-            //PlayerPrefs.SetInt("SocialPlatform", (int)SOCIAL_PLATFORM.Facebook);
-            //PlayerPrefs.SetInt("IsLoggedIn", 1);
+            ProfileTab.Instance.LoadProfileTab();
+            AccountTab.Instance.LoadAccountTab();
 
-            //GetProfileInfo();
+            SwitchToMainPanel();
+            return;
         });
+
+        HideLoginLoadingBar();
     }
 
     private void InitCallback()
@@ -227,10 +258,9 @@ public class SocialLoginManager : MonoBehaviour
             DebugConsole(AccessToken.CurrentAccessToken.ToString());
 
             if (PlayerPrefs.GetInt("IsLoggedIn", 0) == 1
-                //&& PlayerPrefs.GetInt("SocialPlatform", -1) == (int)SOCIAL_PLATFORM.Facebook
+                && PlayerPrefs.GetString("SocialPlatform", "Google") == "Facebook"
                 && PlayerPrefs.GetString("UserID", string.Empty) != string.Empty)
             {
-                //m_LoadingBar.GetComponent<CanvasGroup>().alpha = 1;
                 FacebookAuth(AccessToken.CurrentAccessToken.TokenString);
             }
             else
@@ -270,7 +300,7 @@ public class SocialLoginManager : MonoBehaviour
               {
               }
 
-              m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
+              HideLoginLoadingBar();
           });
     }
 
@@ -334,7 +364,7 @@ public class SocialLoginManager : MonoBehaviour
               {
               }
 
-              m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
+              HideLoginLoadingBar();
           });
     }
 
