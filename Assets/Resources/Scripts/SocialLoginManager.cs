@@ -1,7 +1,5 @@
 ﻿using Facebook.Unity;
 using Firebase.Auth;
-using Firebase.Database;
-using Firebase.Extensions;
 using Google;
 using Michsky.UI.Frost;
 using System;
@@ -24,10 +22,11 @@ public class SocialLoginManager : MonoBehaviour
     [SerializeField] private GameObject m_MainPanel;
     [SerializeField] private GameObject m_MenuManager;
 
-    [SerializeField] private ProfileTab m_ProfileTab;
-    [SerializeField] private AccountTab m_AccountTab;
+    [SerializeField] private TMP_InputField m_ProfileNameInputField;
 
     public static SocialLoginManager Instance;
+
+    public TextMeshProUGUI debugText;
 
     private void Awake()
     {
@@ -36,7 +35,9 @@ public class SocialLoginManager : MonoBehaviour
         configuration = new GoogleSignInConfiguration
         {
             WebClientId = webClientId,
-            RequestIdToken = true
+            RequestIdToken = true, 
+            RequestEmail = true,
+            RequestProfile = true
         };
     }
 
@@ -47,12 +48,11 @@ public class SocialLoginManager : MonoBehaviour
             dependencyStatus = task.Result;
             if (dependencyStatus == Firebase.DependencyStatus.Available)
             {
-                Debug.Log("Firebase initializing...");
                 InitializeFirebase();
             }
             else
             {
-                Debug.Log("Could not resolve all Firebase dependencies: " + dependencyStatus);
+                DebugLog("Could not resolve all Firebase dependencies: " + dependencyStatus);
             }
         });
     }
@@ -80,15 +80,12 @@ public class SocialLoginManager : MonoBehaviour
     private void OnDestroy()
     {
         if (auth != null)
+        {
             auth.StateChanged -= AuthStateChanged;
+            auth.SignOut();
+        }
         auth = null;
         Instance = null;
-    }
-
-    #region Google SignIn
-    public void GoogleSignIn_Clicked()
-    {
-        OnGoogleSignIn();
     }
 
     private void ShowLoginLoadingBar()
@@ -109,6 +106,21 @@ public class SocialLoginManager : MonoBehaviour
         m_MainPanel.GetComponent<Animator>().Play("Panel Start");
         m_Background.GetComponent<Animator>().Play("Switch");
         m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
+    }
+
+    public void SwitchToLoginPanel()
+    {
+        m_MenuManager.GetComponent<BlurManager>().BlurInAnim();
+        m_SplashScreen.GetComponent<Animator>().Play("Login");
+        m_MainPanel.GetComponent<Animator>().Play("Wait");
+        m_Background.GetComponent<Animator>().Play("Start");
+        m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
+    }
+
+    #region Google SignIn
+    public void GoogleSignIn_Clicked()
+    {
+        OnGoogleSignIn();
     }
 
     private void OnGoogleSignIn()
@@ -133,20 +145,20 @@ public class SocialLoginManager : MonoBehaviour
                 if (enumerator.MoveNext())
                 {
                     GoogleSignIn.SignInException error = (GoogleSignIn.SignInException)enumerator.Current;
-                    HideLoginLoadingBar();
-                    Debug.Log("OnGoogleAuthenticationFinished " + error.ToString());
+                    DebugLog("OnGoogleAuthenticationFinished " + error.ToString());
                 }
                 else
                 {
-                    HideLoginLoadingBar();
-                    Debug.Log("OnGoogleAuthenticationFinished enumerator.MoveNext() task.IsFaulted");
+                    DebugLog("OnGoogleAuthenticationFinished enumerator.MoveNext() task.IsFaulted");
                 }
             }
+
+            HideLoginLoadingBar();
         }
         else if (task.IsCanceled)
         {
             HideLoginLoadingBar();
-            Debug.Log("OnGoogleAuthenticationFinished task.IsCanceled");
+            DebugLog("OnGoogleAuthenticationFinished task.IsCanceled");
         }
         else
         {
@@ -156,14 +168,14 @@ public class SocialLoginManager : MonoBehaviour
                 if (t.IsCanceled)
                 {
                     HideLoginLoadingBar();
-                    Debug.Log("OnGoogleAuthenticationFinished t.IsCanceled");
+                    DebugLog("OnGoogleAuthenticationFinished t.IsCanceled");
                     return;
                 }
 
                 if (t.IsFaulted)
                 {
                     HideLoginLoadingBar();
-                    Debug.Log("OnGoogleAuthenticationFinished t.IsFaulted");
+                    DebugLog("OnGoogleAuthenticationFinished t.IsFaulted");
                     return;
                 }
 
@@ -205,16 +217,11 @@ public class SocialLoginManager : MonoBehaviour
     {
         if (FB.IsLoggedIn)
         {
-            Debug.Log("FB Logged In.");
-            Debug.Log("Start Firebase Auth");
-            Debug.Log("IdToken: " + AccessToken.CurrentAccessToken.TokenString);
-
             FacebookAuth(AccessToken.CurrentAccessToken.TokenString);
         }
         else
         {
             HideLoginLoadingBar();
-            Debug.Log("User cancelled login");
         }
     }
 
@@ -227,13 +234,13 @@ public class SocialLoginManager : MonoBehaviour
             if (task.IsCanceled)
             {
                 HideLoginLoadingBar();
-                Debug.Log("SignInWithCredentialAsync was canceled.");
+                DebugLog("SignInWithCredentialAsync was canceled.");
                 return;
             }
             if (task.IsFaulted)
             {
                 HideLoginLoadingBar();
-                Debug.Log("SignInWithCredentialAsync encountered an error: " + task.Exception);
+                DebugLog("SignInWithCredentialAsync encountered an error: " + task.Exception);
                 return;
             }
 
@@ -258,13 +265,8 @@ public class SocialLoginManager : MonoBehaviour
 
     private void InitCallback()
     {
-        Debug.Log("FB Init done.");
-
         if (FB.IsLoggedIn)
         {
-            Debug.Log(string.Format("FB Logged In. TokenString:" + AccessToken.CurrentAccessToken.TokenString));
-            Debug.Log(AccessToken.CurrentAccessToken.ToString());
-
             if (PlayerPrefs.GetInt("IsLoggedIn", 0) == 1
                 && PlayerPrefs.GetString("SocialPlatform", "Google") == "Facebook"
                 && PlayerPrefs.GetString("UserID", string.Empty) != string.Empty)
@@ -273,12 +275,12 @@ public class SocialLoginManager : MonoBehaviour
             }
             else
             {
-                Debug.Log("User not yet loged FB or loged out");
+                DebugLog("User not yet loged FB or loged out");
             }
         }
         else
         {
-            Debug.Log("User cancelled login");
+            DebugLog("User cancelled login");
         }
     }
 
@@ -307,31 +309,50 @@ public class SocialLoginManager : MonoBehaviour
             {
                 if (t.IsCanceled)
                 {
-                    Debug.Log("OnGoogleAuthenticationFinished t.IsCanceled");
+                    DebugLog("OnGoogleAuthenticationFinished t.IsCanceled");
                     return;
                 }
 
                 if (t.IsFaulted)
                 {
-                    Debug.Log("OnGoogleAuthenticationFinished t.IsFaulted");
+                    DebugLog("OnGoogleAuthenticationFinished t.IsFaulted");
                     return;
                 }
-
-                //user = auth.CurrentUser;
-
-                //PlayerPrefs.SetString("UserID", user.UserId);
-                //PlayerPrefs.SetString("UserName", user.DisplayName);
-                //PlayerPrefs.SetString("UserEmail", user.Email);
-                //PlayerPrefs.SetString("SocialPlatform", "Google");
-                //PlayerPrefs.SetInt("IsLoggedIn", 1);
-
-                //ProfileTab.Instance.LoadProfileTab();
-                //ProfileTab.Instance.GetProfileInfo();
-                //AccountTab.Instance.LoadAccountTab();
-
-                //SwitchToMainPanel();
-                //return;
             });
 
         }
+    }
+
+    public void DeleteAccount()
+    {
+        if (user != null)
+        {
+            user.DeleteAsync().ContinueWith(task =>
+            {
+                if (task.IsCanceled)
+                {
+                    DebugLog("DeleteAsync was canceled.");
+                    return;
+                }
+
+                if (task.IsFaulted)
+                {
+                    DebugLog("DeleteAsync encountered an error: " + task.Exception);
+                    return;
+                }
+
+                if (auth != null)
+                {
+                    auth.SignOut();
+                    SwitchToLoginPanel();
+                }
+            });
+        }
+    }
+
+    private void DebugLog(string text)
+    {
+        Debug.Log(text);
+        debugText.text += text + "\n";
+    }
 }
