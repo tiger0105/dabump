@@ -6,8 +6,9 @@ public class Courts : MonoBehaviour
 {
     private void Start()
     {
-        GetCourts();
+        
     }
+
     public void GetCourts()
     {
         FirebaseFirestore firestore = FirebaseFirestore.GetInstance(Firebase.FirebaseApp.DefaultInstance);
