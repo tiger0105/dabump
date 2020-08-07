@@ -1,6 +1,9 @@
 ﻿using Firebase.Extensions;
 using Firebase.Firestore;
+using Firebase.Storage;
+using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 
@@ -16,11 +19,17 @@ public class Courts : MonoBehaviour
         Instance = this;
     }
 
+    private void Start()
+    {
+        GetCourts();
+    }
+
     public async void GetCourts()
     {
         m_CourtsLoadingBar.SetActive(true);
 
-        FirebaseFirestore firestore = FirebaseFirestore.GetInstance(Firebase.FirebaseApp.DefaultInstance);
+        FirebaseFirestore firestore = FirebaseFirestore.DefaultInstance;
+        FirebaseStorage storage = FirebaseStorage.DefaultInstance;
 
         CollectionReference courtsRef = firestore.Collection("Courts");
         Query query = courtsRef.OrderBy("ID");
@@ -43,10 +52,18 @@ public class Courts : MonoBehaviour
             foreach (DocumentSnapshot documentSnapshot in allCourtsSnapshot.Documents)
             {
                 Dictionary<string, object> court = documentSnapshot.ToDictionary();
-                DebugLog(court["ID"].ToString());
-                DebugLog(court["Image"].ToString());
-                DebugLog(court["Name"].ToString());
-                DebugLog(court["Address"].ToString());
+                StorageReference imageReference = storage.GetReference(court["Image"].ToString());
+                imageReference.GetDownloadUrlAsync().ContinueWith((Task<Uri> taskUri) => 
+                {
+                    if (!taskUri.IsFaulted && !taskUri.IsCanceled)
+                    {
+                        DebugLog("Download URL: " + taskUri.Result.AbsoluteUri);
+                    }
+                });
+                //DebugLog(court["ID"].ToString());
+                //DebugLog(court["Image"].ToString());
+                //DebugLog(court["Name"].ToString());
+                //DebugLog(court["Address"].ToString());
             }
         });
 

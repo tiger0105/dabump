@@ -187,7 +187,6 @@ public class SocialLoginManager : MonoBehaviour
                 PlayerPrefs.SetString("SocialPlatform", "Google");
                 PlayerPrefs.SetInt("IsLoggedIn", 1);
 
-                Courts.Instance.GetCourts();
                 ProfileTab.Instance.LoadProfileTab();
                 ProfileTab.Instance.GetProfileInfo();
                 AccountTab.Instance.LoadAccountTab();
@@ -253,7 +252,6 @@ public class SocialLoginManager : MonoBehaviour
             PlayerPrefs.SetString("SocialPlatform", "Facebook");
             PlayerPrefs.SetInt("IsLoggedIn", 1);
 
-            Courts.Instance.GetCourts();
             ProfileTab.Instance.LoadProfileTab();
             ProfileTab.Instance.GetProfileInfo();
             AccountTab.Instance.LoadAccountTab();
