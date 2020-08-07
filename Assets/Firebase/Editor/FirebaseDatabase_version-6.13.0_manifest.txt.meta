@@ -5,10 +5,5 @@ labels:
 - gvh_manifest
 - gvh_version-6.13.0
 - gvhp_exportpath-Firebase/Editor/FirebaseDatabase_version-6.13.0_manifest.txt
-- gvhp_exportpath-Firebase\Editor\FirebaseDatabase_version-6.13.0_manifest.txt
 - gvhp_manifestname-0Firebase Realtime Database
-TextScriptImporter:
-  externalObjects: {}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
+timeCreated: 0
