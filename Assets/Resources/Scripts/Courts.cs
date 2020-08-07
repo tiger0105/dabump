@@ -1,9 +1,19 @@
 ﻿using Firebase.Firestore;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public class Courts : MonoBehaviour
 {
+    public TextMeshProUGUI debugText;
+
+    public static Courts Instance;
+
+    private void Awake()
+    {
+        Instance = this;
+    }
+
     private void Start()
     {
         
@@ -21,11 +31,17 @@ public class Courts : MonoBehaviour
             foreach (DocumentSnapshot documentSnapshot in snapshot.Documents)
             {
                 Dictionary<string, object> court = documentSnapshot.ToDictionary();
-                Debug.Log(court["ID"]);
-                Debug.Log(court["Image"]);
-                Debug.Log(court["Name"]);
-                Debug.Log(court["Address"]);
+                DebugLog(court["ID"].ToString());
+                DebugLog(court["Image"].ToString());
+                DebugLog(court["Name"].ToString());
+                DebugLog(court["Address"].ToString());
             }
         });
+    }
+
+    private void DebugLog(string text)
+    {
+        Debug.Log(text);
+        debugText.text += text + "\n";
     }
 }

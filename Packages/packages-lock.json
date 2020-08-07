@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "com.google.external-dependency-manager": {
-      "version": "1.2.156",
+      "version": "1.2.157",
       "depth": 0,
       "source": "registry",
       "dependencies": {},

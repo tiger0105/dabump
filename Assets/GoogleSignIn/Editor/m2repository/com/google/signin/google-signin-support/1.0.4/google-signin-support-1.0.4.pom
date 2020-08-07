@@ -4,5 +4,5 @@
   <groupId>com.google.signin</groupId>
   <artifactId>google-signin-support</artifactId>
   <version>1.0.4</version>
-  <packaging>aar</packaging>
+  <packaging>srcaar</packaging>
 </project>
