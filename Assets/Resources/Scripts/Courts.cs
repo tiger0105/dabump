@@ -3,6 +3,7 @@ using Firebase.Firestore;
 using Firebase.Storage;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
@@ -34,16 +35,16 @@ public class Courts : MonoBehaviour
         CollectionReference courtsRef = firestore.Collection("Courts");
         Query query = courtsRef.OrderBy("ID");
 
-        await query.GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        await query.GetSnapshotAsync().ContinueWithOnMainThread(async task =>
         {
             if (task.IsCanceled)
             {
-                DebugLog("GetCourts was canceled.");
+                DebugLog("query.GetSnapshotAsync() was canceled.");
                 return;
             }
             if (task.IsFaulted)
             {
-                DebugLog("GetCourts encountered an error: " + task.Exception);
+                DebugLog("query.GetSnapshotAsync() encountered an error: " + task.Exception);
                 return;
             }
 
@@ -53,15 +54,30 @@ public class Courts : MonoBehaviour
             {
                 Dictionary<string, object> court = documentSnapshot.ToDictionary();
                 StorageReference imageReference = storage.GetReference(court["Image"].ToString());
-                imageReference.GetDownloadUrlAsync().ContinueWith((Task<Uri> taskUri) => 
-                {
-                    if (!taskUri.IsFaulted && !taskUri.IsCanceled)
+
+                Task imageTask = imageReference.GetFileAsync
+                (
+                    Application.persistentDataPath + "/" + court["Image"].ToString(), 
+                    new StorageProgress<DownloadState>((DownloadState state) => 
                     {
-                        DebugLog("Download URL: " + taskUri.Result.AbsoluteUri);
+                        DebugLog(string.Format(
+                            "Progress: {0} of {1} bytes transferred.",
+                            state.BytesTransferred,
+                            state.TotalByteCount
+                        ));
+                    }), 
+                    CancellationToken.None
+                );
+
+                await imageTask.ContinueWith(resultTask => 
+                {
+                    if (!resultTask.IsFaulted && !resultTask.IsCanceled)
+                    {
+                        Debug.Log("Download finished.");
                     }
                 });
                 //DebugLog(court["ID"].ToString());
-                //DebugLog(court["Image"].ToString());
+                DebugLog(court["Image"].ToString());
                 //DebugLog(court["Name"].ToString());
                 //DebugLog(court["Address"].ToString());
             }
