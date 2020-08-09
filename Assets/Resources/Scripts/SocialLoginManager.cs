@@ -58,6 +58,9 @@ public class SocialLoginManager : MonoBehaviour
 
     private void Start()
     {
+#if UNITY_EDITOR
+        _ = InitializeFirebaseAsync();
+#else
         FirebaseApp.CheckAndFixDependenciesAsync().ContinueWith(async task =>
         {
             dependencyStatus = task.Result;
@@ -70,6 +73,7 @@ public class SocialLoginManager : MonoBehaviour
                 DebugLog("Could not resolve all Firebase dependencies: " + dependencyStatus);
             }
         });
+#endif
     }
 
     private async Task InitializeFirebaseAsync()
@@ -138,7 +142,7 @@ public class SocialLoginManager : MonoBehaviour
         m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
     }
 
-    #region Google SignIn
+#region Google SignIn
     public void GoogleSignIn_Clicked()
     {
         OnGoogleSignIn();
@@ -157,7 +161,7 @@ public class SocialLoginManager : MonoBehaviour
         GoogleSignIn.DefaultInstance.SignIn().ContinueWith(OnGoogleAuthenticationFinished);
     }
 
-    private void OnGoogleAuthenticationFinished(Task<GoogleSignInUser> task)
+    private async Task OnGoogleAuthenticationFinished(Task<GoogleSignInUser> task)
     {
         if (task.IsFaulted)
         {
@@ -172,7 +176,7 @@ public class SocialLoginManager : MonoBehaviour
         else
         {
             Credential credential = GoogleAuthProvider.GetCredential(task.Result.IdToken, null);
-            auth.SignInWithCredentialAsync(credential).ContinueWith(t =>
+            await auth.SignInWithCredentialAsync(credential).ContinueWith(async t =>
             {
                 if (t.IsCanceled)
                 {
@@ -196,7 +200,7 @@ public class SocialLoginManager : MonoBehaviour
                 PlayerPrefs.SetString("SocialPlatform", "Google");
                 PlayerPrefs.SetInt("IsLoggedIn", 1);
 
-                _ = GetProfile();
+                await GetProfile();
                 AccountTab.Instance.LoadAccountTab();
 
                 SwitchToMainPanel();
@@ -206,9 +210,9 @@ public class SocialLoginManager : MonoBehaviour
             HideLoginLoadingBar();
         }
     }
-    #endregion
+#endregion
 
-    #region Facebook SignIn
+#region Facebook SignIn
     public void FacebookSignIn_Click()
     {
         OnFacebookSignIn();
@@ -225,7 +229,7 @@ public class SocialLoginManager : MonoBehaviour
     {
         if (FB.IsLoggedIn)
         {
-            FacebookAuth(AccessToken.CurrentAccessToken.TokenString);
+            _ = FacebookAuth(AccessToken.CurrentAccessToken.TokenString);
         }
         else
         {
@@ -233,11 +237,11 @@ public class SocialLoginManager : MonoBehaviour
         }
     }
 
-    private void FacebookAuth(string accessToken)
+    private async Task FacebookAuth(string accessToken)
     {
         Credential credential = FacebookAuthProvider.GetCredential(accessToken);
 
-        auth.SignInWithCredentialAsync(credential).ContinueWith(task =>
+        await auth.SignInWithCredentialAsync(credential).ContinueWith(async task =>
         {
             if (task.IsCanceled)
             {
@@ -260,7 +264,7 @@ public class SocialLoginManager : MonoBehaviour
             PlayerPrefs.SetString("SocialPlatform", "Facebook");
             PlayerPrefs.SetInt("IsLoggedIn", 1);
 
-            _ = GetProfile();
+            await GetProfile();
             AccountTab.Instance.LoadAccountTab();
 
             SwitchToMainPanel();
@@ -302,7 +306,7 @@ public class SocialLoginManager : MonoBehaviour
             Time.timeScale = 1;
         }
     }
-    #endregion
+#endregion
 
     public async Task UpdateDisplayName(string name)
     {
@@ -364,8 +368,6 @@ public class SocialLoginManager : MonoBehaviour
     {
         //m_CourtsLoadingBar.SetActive(true);
 
-        DebugLog("GetCourts");
-
         CollectionReference courtsRef = firestore.Collection("Courts");
         Query query = courtsRef.OrderBy("ID");
 
@@ -413,6 +415,8 @@ public class SocialLoginManager : MonoBehaviour
             }
         });
 
+        Courts.Instance.UpdateCourtListLayout();
+
         //m_CourtsLoadingBar.SetActive(false);
     }
 
@@ -423,12 +427,6 @@ public class SocialLoginManager : MonoBehaviour
             path,
             new StorageProgress<DownloadState>((DownloadState state) =>
             {
-                DebugLog(string.Format(
-                    "Progress: {0} of {1} bytes transferred.",
-                    state.BytesTransferred,
-                    state.TotalByteCount
-                ));
-
                 if (state.BytesTransferred > 0 && state.TotalByteCount > 0)
                 {
                     Courts.Instance.UpdateCourtImageDownloadProgress(id, (int)((float)state.BytesTransferred / state.TotalByteCount * 100));
@@ -471,7 +469,7 @@ public class SocialLoginManager : MonoBehaviour
         
         await documentReference.SetAsync(profile).ContinueWithOnMainThread(task =>
         {
-            DebugLog("Save Profile Success");
+            
         });
 
         m_SaveProfileLoadingBar.SetActive(false);
@@ -527,6 +525,7 @@ public class SocialLoginManager : MonoBehaviour
                 ProfileTab.Instance.m_TeamPositionSelector.index = index;
                 ProfileTab.Instance.m_TeamPositionSelector.defaultIndex = index;
                 ProfileTab.Instance.m_TeamPositionSelector.SetValueAtIndex();
+                ProfileTab.Instance.m_NameInputField.text = cardName;
                 ProfileTab.Instance.m_CardName.text = cardName;
                 ProfileTab.Instance.m_CardName.color = ProfileTab.Instance.SetInvertedColor(ProfileTab.Instance.m_CardTopColor.color);
                 ProfileTab.Instance.m_CardPosition.text = ProfileTab.Instance.m_TeamPositionSelector.elements[index];
@@ -538,6 +537,34 @@ public class SocialLoginManager : MonoBehaviour
             }
 
             m_SaveProfileLoadingBar.SetActive(false);
+        });
+    }
+
+    public void CheckInCourt()
+    {
+        _ = SetCheckInCourt();
+    }
+
+    public async Task SetCheckInCourt()
+    {
+        string userId = PlayerPrefs.GetString("UserID", string.Empty);
+        if (userId == string.Empty)
+        {
+            m_SaveProfileLoadingBar.SetActive(false);
+            return;
+        }
+
+        int[] courts = { 1, 2, 3, 4 };
+
+        DocumentReference documentReference = firestore.Collection("Profiles").Document(userId);
+        Dictionary<string, object> profile = new Dictionary<string, object>
+        {
+            ["Courts"] = courts,
+        };
+
+        await documentReference.SetAsync(profile).ContinueWithOnMainThread(task =>
+        {
+            DebugLog("SetCheckInCourt Completed");
         });
     }
 

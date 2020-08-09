@@ -4,9 +4,9 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class Courts : MonoBehaviour
+public class Home : MonoBehaviour
 {
-    public static Courts Instance;
+    public static Home Instance;
 
     [SerializeField] private GameObject m_CourtCardPrefab;
     [SerializeField] private ScrollRect m_CourtScrollRect;
