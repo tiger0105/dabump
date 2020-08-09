@@ -47,7 +47,6 @@ namespace Michsky.UI.Frost
 
         IEnumerator BlurOut()
         {
-            Debug.Log("sdfds");
             currentBlurValue = blurMaterial.GetFloat("_Size");
 
             while (currentBlurValue >= 3)
