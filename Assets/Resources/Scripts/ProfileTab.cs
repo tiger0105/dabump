@@ -38,15 +38,6 @@ public class ProfileTab : MonoBehaviour
         return inverted;
     }
 
-    public void LoadProfileTab()
-    {
-        m_NameInputField.text = PlayerPrefs.GetString("UserName", string.Empty);
-        m_CardName.text = m_NameInputField.text;
-        m_CardName.color = SetInvertedColor(m_CardTopColor.color);
-        m_CardPosition.text = m_TeamPositionSelector.elements[m_TeamPositionSelector.index];
-        m_CardPosition.color = SetInvertedColor(m_CardBottomColor.color);
-    }
-
     public void OnNameInputFieldChanged()
     {
         m_CardName.text = m_NameInputField.text;

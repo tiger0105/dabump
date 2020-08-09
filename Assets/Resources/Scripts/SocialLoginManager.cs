@@ -61,7 +61,7 @@ public class SocialLoginManager : MonoBehaviour
         FirebaseApp.CheckAndFixDependenciesAsync().ContinueWith(async task =>
         {
             dependencyStatus = task.Result;
-            if (dependencyStatus == Firebase.DependencyStatus.Available)
+            if (dependencyStatus == DependencyStatus.Available)
             {
                 await InitializeFirebaseAsync();
             }
@@ -161,21 +161,7 @@ public class SocialLoginManager : MonoBehaviour
     {
         if (task.IsFaulted)
         {
-            using (IEnumerator<Exception> enumerator = task.Exception.InnerExceptions.GetEnumerator())
-            {
-                if (enumerator.MoveNext())
-                {
-                    GoogleSignIn.SignInException error = (GoogleSignIn.SignInException)enumerator.Current;
-                    DebugLog("OnGoogleAuthenticationFinished " + error.ToString());
-                    HideLoginLoadingBar();
-                }
-                else
-                {
-                    DebugLog("OnGoogleAuthenticationFinished enumerator.MoveNext() task.IsFaulted");
-                    HideLoginLoadingBar();
-                }
-            }
-
+            DebugLog("OnGoogleAuthenticationFinished task.IsFaulted");
             HideLoginLoadingBar();
         }
         else if (task.IsCanceled)
@@ -210,16 +196,15 @@ public class SocialLoginManager : MonoBehaviour
                 PlayerPrefs.SetString("SocialPlatform", "Google");
                 PlayerPrefs.SetInt("IsLoggedIn", 1);
 
-                ProfileTab.Instance.LoadProfileTab();
                 _ = GetProfile();
                 AccountTab.Instance.LoadAccountTab();
 
                 SwitchToMainPanel();
                 return;
             });
-        }
 
-        HideLoginLoadingBar();
+            HideLoginLoadingBar();
+        }
     }
     #endregion
 
@@ -275,7 +260,6 @@ public class SocialLoginManager : MonoBehaviour
             PlayerPrefs.SetString("SocialPlatform", "Facebook");
             PlayerPrefs.SetInt("IsLoggedIn", 1);
 
-            ProfileTab.Instance.LoadProfileTab();
             _ = GetProfile();
             AccountTab.Instance.LoadAccountTab();
 
