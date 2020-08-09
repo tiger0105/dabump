@@ -282,7 +282,7 @@ public class SocialLoginManager : MonoBehaviour
                 && PlayerPrefs.GetString("SocialPlatform", "Google") == "Facebook"
                 && PlayerPrefs.GetString("UserID", string.Empty) != string.Empty)
             {
-                FacebookAuth(AccessToken.CurrentAccessToken.TokenString);
+                _ = FacebookAuth(AccessToken.CurrentAccessToken.TokenString);
             }
             else
             {
