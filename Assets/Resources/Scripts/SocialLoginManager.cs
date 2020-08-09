@@ -340,6 +340,8 @@ public class SocialLoginManager : MonoBehaviour
                     DebugLog("OnGoogleAuthenticationFinished t.IsFaulted");
                     return;
                 }
+
+                DebugLog("Display name updated successfully");
             });
 
         }
@@ -474,9 +476,10 @@ public class SocialLoginManager : MonoBehaviour
         
         await documentReference.SetAsync(profile).ContinueWithOnMainThread(task =>
         {
-            m_SaveProfileLoadingBar.SetActive(true);
             DebugLog("Save Profile Success");
         });
+
+        m_SaveProfileLoadingBar.SetActive(false);
     }
 
     public async Task GetProfile()
@@ -496,12 +499,14 @@ public class SocialLoginManager : MonoBehaviour
         {
             if (task.IsCanceled)
             {
-                DebugLog("query.GetSnapshotAsync() was canceled.");
+                DebugLog("documentReference.GetSnapshotAsync() was canceled.");
+                m_SaveProfileLoadingBar.SetActive(false);
                 return;
             }
             if (task.IsFaulted)
             {
-                DebugLog("query.GetSnapshotAsync() encountered an error: " + task.Exception);
+                DebugLog("documentReference.GetSnapshotAsync() encountered an error: " + task.Exception);
+                m_SaveProfileLoadingBar.SetActive(false);
                 return;
             }
 
@@ -511,27 +516,33 @@ public class SocialLoginManager : MonoBehaviour
             {
                 Dictionary<string, object> profile = documentSnapshot.ToDictionary();
 
+                string cardName = profile["Name"].ToString();
                 string teamPosition = profile["TeamPosition"].ToString();
                 string cardTopColor = profile["CardTopColor"].ToString();
                 string cardBottomColor = profile["CardBottomColor"].ToString();
                 _ = ProfileTab.Instance.m_CardTopColor.color;
-                ColorUtility.TryParseHtmlString(cardTopColor, out Color topColor);
+                ColorUtility.TryParseHtmlString("#" + cardTopColor, out Color topColor);
                 ProfileTab.Instance.m_CardTopColor.color = topColor;
+                ProfileTab.Instance.m_TopColor.color = topColor;
                 _ = ProfileTab.Instance.m_CardBottomColor.color;
-                ColorUtility.TryParseHtmlString(cardBottomColor, out Color bottomColor);
+                ColorUtility.TryParseHtmlString("#" + cardBottomColor, out Color bottomColor);
                 ProfileTab.Instance.m_CardBottomColor.color = bottomColor;
+                ProfileTab.Instance.m_BottomColor.color = bottomColor;
                 int index = ProfileTab.Instance.m_TeamPositionSelector.elements.IndexOf(teamPosition);
                 ProfileTab.Instance.m_TeamPositionSelector.index = index;
+                ProfileTab.Instance.m_TeamPositionSelector.defaultIndex = index;
+                ProfileTab.Instance.m_TeamPositionSelector.SetValueAtIndex();
+                ProfileTab.Instance.m_CardName.text = cardName;
+                ProfileTab.Instance.m_CardName.color = ProfileTab.Instance.SetInvertedColor(ProfileTab.Instance.m_CardTopColor.color);
                 ProfileTab.Instance.m_CardPosition.text = ProfileTab.Instance.m_TeamPositionSelector.elements[index];
                 ProfileTab.Instance.m_CardPosition.color = ProfileTab.Instance.SetInvertedColor(ProfileTab.Instance.m_CardBottomColor.color);
-                DebugLog(teamPosition);
-                DebugLog(cardTopColor);
-                DebugLog(cardBottomColor);
             }
             else
             {
                 DebugLog(string.Format("Document {0} does not exist!", documentSnapshot.Id));
             }
+
+            m_SaveProfileLoadingBar.SetActive(false);
         });
     }
 

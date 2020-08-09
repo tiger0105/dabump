@@ -10,6 +10,8 @@ public class ProfileTab : MonoBehaviour
     [SerializeField] public TextMeshProUGUI m_CardName;
     [SerializeField] public TextMeshProUGUI m_CardRank;
     [SerializeField] public TextMeshProUGUI m_CardPosition;
+    [SerializeField] public Image m_TopColor;
+    [SerializeField] public Image m_BottomColor;
     [SerializeField] public Image m_CardTopColor;
     [SerializeField] public Image m_CardBottomColor;
     [SerializeField] public Button m_UploadCardPhotoButton;
@@ -90,5 +92,10 @@ public class ProfileTab : MonoBehaviour
                 Destroy(texture, 5f);
             }
         }, "Select a PNG image", "image/png");
+    }
+
+    public void SaveProfile()
+    {
+        _ = SocialLoginManager.Instance.SaveProfile();
     }
 }

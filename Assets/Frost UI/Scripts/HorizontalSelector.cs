@@ -32,6 +32,14 @@ namespace Michsky.UI.ModernUIPack
             labeHelper.text = label.text;
         }
 
+        public void SetValueAtIndex()
+        {
+            labeHelper.text = label.text;
+
+            onValueChanged.Invoke();
+            label.text = elements[index];
+        }
+
         public void PreviousClick()
         {
             labeHelper.text = label.text;
