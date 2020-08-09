@@ -35,8 +35,8 @@ public class SocialLoginManager : MonoBehaviour
     [SerializeField] private GameObject m_Background;
     [SerializeField] private GameObject m_MainPanel;
     [SerializeField] private GameObject m_MenuManager;
-    [Header("Courts")]
-    [SerializeField] private GameObject m_CourtsLoadingBar;
+    //[Header("Courts")]
+    //[SerializeField] private GameObject m_CourtsLoadingBar;
     [Header("Profile -> Profile Tab")]
     [SerializeField] private TMP_InputField m_ProfileNameInputField;
     [SerializeField] private GameObject m_SaveProfileLoadingBar;
@@ -167,10 +167,12 @@ public class SocialLoginManager : MonoBehaviour
                 {
                     GoogleSignIn.SignInException error = (GoogleSignIn.SignInException)enumerator.Current;
                     DebugLog("OnGoogleAuthenticationFinished " + error.ToString());
+                    HideLoginLoadingBar();
                 }
                 else
                 {
                     DebugLog("OnGoogleAuthenticationFinished enumerator.MoveNext() task.IsFaulted");
+                    HideLoginLoadingBar();
                 }
             }
 
@@ -376,12 +378,12 @@ public class SocialLoginManager : MonoBehaviour
 
     private async Task GetCourts()
     {
-        m_CourtsLoadingBar.SetActive(true);
+        //m_CourtsLoadingBar.SetActive(true);
+
+        DebugLog("GetCourts");
 
         CollectionReference courtsRef = firestore.Collection("Courts");
         Query query = courtsRef.OrderBy("ID");
-
-        DebugLog("Created Firestore Reference");
 
         string persistentCourtsPath = Application.persistentDataPath + "/Courts";
 
@@ -390,16 +392,18 @@ public class SocialLoginManager : MonoBehaviour
             Directory.CreateDirectory(persistentCourtsPath);
         }
 
+        Courts.Instance.ClearCourtsList();
+
         await query.GetSnapshotAsync().ContinueWithOnMainThread(task =>
         {
             if (task.IsCanceled)
             {
-                DebugLog("query.GetSnapshotAsync() was canceled.");
+                DebugLog("GetCourts() -> query.GetSnapshotAsync() was canceled.");
                 return;
             }
             if (task.IsFaulted)
             {
-                DebugLog("query.GetSnapshotAsync() encountered an error: " + task.Exception);
+                DebugLog("GetCourts() -> query.GetSnapshotAsync() encountered an error: " + task.Exception);
                 return;
             }
 
@@ -411,22 +415,24 @@ public class SocialLoginManager : MonoBehaviour
                 StorageReference imageReference = storage.GetReference(court["Image"].ToString());
 
                 string imagePath = Application.persistentDataPath + "/" + court["Image"].ToString();
+                bool canParse = int.TryParse(court["ID"].ToString(), out int imageID);
 
-                if (!File.Exists(imagePath))
+                if (canParse == false) continue;
+
+                bool isImageDownloaded = File.Exists(imagePath);
+                if (!isImageDownloaded)
                 {
-                    _ = DownloadImageAsync(imageReference, imagePath);
+                    _ = DownloadImageAsync(imageReference, imagePath, imageID);
                 }
 
-                //DebugLog(court["ID"].ToString());
-                //DebugLog(court["Name"].ToString());
-                //DebugLog(court["Address"].ToString());
+                Courts.Instance.AddCourt(imageID, court["Name"].ToString(), court["Address"].ToString(),  isImageDownloaded ? imagePath : "");
             }
         });
 
-        m_CourtsLoadingBar.SetActive(false);
+        //m_CourtsLoadingBar.SetActive(false);
     }
 
-    private async Task DownloadImageAsync(StorageReference imageReference, string path)
+    private async Task DownloadImageAsync(StorageReference imageReference, string path, int id)
     {
         Task imageTask = imageReference.GetFileAsync
         (
@@ -438,6 +444,11 @@ public class SocialLoginManager : MonoBehaviour
                     state.BytesTransferred,
                     state.TotalByteCount
                 ));
+
+                if (state.BytesTransferred > 0 && state.TotalByteCount > 0)
+                {
+                    Courts.Instance.UpdateCourtImageDownloadProgress(id, (int)((float)state.BytesTransferred / state.TotalByteCount * 100));
+                }
             }),
             CancellationToken.None
         );
@@ -446,7 +457,7 @@ public class SocialLoginManager : MonoBehaviour
         {
             if (!resultTask.IsFaulted && !resultTask.IsCanceled)
             {
-                Debug.Log("Download finished.");
+                Courts.Instance.SetCourtImage(id, path);
             }
         });
     }
@@ -548,8 +559,11 @@ public class SocialLoginManager : MonoBehaviour
 
     private void OnApplicationQuit()
     {
-        firestore.TerminateAsync();
-        firestore.ClearPersistenceAsync();
+        if (firestore != null)
+        {
+            firestore.TerminateAsync();
+            firestore.ClearPersistenceAsync();
+        }
     }
 
     private void DebugLog(string text)
