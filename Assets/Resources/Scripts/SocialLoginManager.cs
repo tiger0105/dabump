@@ -1,31 +1,46 @@
 ﻿using Facebook.Unity;
+using Firebase;
 using Firebase.Auth;
+using Firebase.Extensions;
+using Firebase.Firestore;
+using Firebase.Storage;
 using Google;
 using Michsky.UI.Frost;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
+using Query = Firebase.Firestore.Query;
 
 public class SocialLoginManager : MonoBehaviour
 {
+    public static SocialLoginManager Instance;
+
     private readonly string webClientId = "1013499565612-oto0j58l915sbmcplota9a3evbpugev2.apps.googleusercontent.com";
+    
     private GoogleSignInConfiguration configuration;
-    private Firebase.DependencyStatus dependencyStatus = Firebase.DependencyStatus.UnavailableOther;
+    private DependencyStatus dependencyStatus = DependencyStatus.UnavailableOther;
+    
     private FirebaseAuth auth;
     private FirebaseUser user;
+    private FirebaseFirestore firestore;
+    private FirebaseStorage storage;
 
+    [Header("Login")]
     [SerializeField] private GameObject m_LoadingBar;
     [SerializeField] private GameObject m_SplashScreen;
     [SerializeField] private GameObject m_Background;
     [SerializeField] private GameObject m_MainPanel;
     [SerializeField] private GameObject m_MenuManager;
-
+    [Header("Courts")]
+    [SerializeField] private GameObject m_CourtsLoadingBar;
+    [Header("Profile -> Profile Tab")]
     [SerializeField] private TMP_InputField m_ProfileNameInputField;
-
-    public static SocialLoginManager Instance;
-
+    [SerializeField] private GameObject m_SaveProfileLoadingBar;
+    [Header("Debug")]
     public TextMeshProUGUI debugText;
 
     private void Awake()
@@ -43,12 +58,12 @@ public class SocialLoginManager : MonoBehaviour
 
     private void Start()
     {
-        Firebase.FirebaseApp.CheckAndFixDependenciesAsync().ContinueWith(task =>
+        FirebaseApp.CheckAndFixDependenciesAsync().ContinueWith(async task =>
         {
             dependencyStatus = task.Result;
             if (dependencyStatus == Firebase.DependencyStatus.Available)
             {
-                InitializeFirebase();
+                await InitializeFirebaseAsync();
             }
             else
             {
@@ -57,9 +72,10 @@ public class SocialLoginManager : MonoBehaviour
         });
     }
 
-    private void InitializeFirebase()
+    private async Task InitializeFirebaseAsync()
     {
-        auth = FirebaseAuth.DefaultInstance;
+        FirebaseApp app = FirebaseApp.Create();
+        auth = FirebaseAuth.GetAuth(app);
         auth.StateChanged += AuthStateChanged;
         AuthStateChanged(this, null);
 
@@ -71,6 +87,11 @@ public class SocialLoginManager : MonoBehaviour
         {
             FB.ActivateApp();
         }
+
+        firestore = FirebaseFirestore.GetInstance(app);
+        storage = FirebaseStorage.GetInstance(app);
+
+        await GetCourts();
     }
 
     private void AuthStateChanged(object sender, EventArgs eventArgs)
@@ -188,7 +209,7 @@ public class SocialLoginManager : MonoBehaviour
                 PlayerPrefs.SetInt("IsLoggedIn", 1);
 
                 ProfileTab.Instance.LoadProfileTab();
-                ProfileTab.Instance.GetProfileInfo();
+                _ = GetProfile();
                 AccountTab.Instance.LoadAccountTab();
 
                 SwitchToMainPanel();
@@ -253,7 +274,7 @@ public class SocialLoginManager : MonoBehaviour
             PlayerPrefs.SetInt("IsLoggedIn", 1);
 
             ProfileTab.Instance.LoadProfileTab();
-            ProfileTab.Instance.GetProfileInfo();
+            _ = GetProfile();
             AccountTab.Instance.LoadAccountTab();
 
             SwitchToMainPanel();
@@ -297,7 +318,7 @@ public class SocialLoginManager : MonoBehaviour
     }
     #endregion
 
-    public void UpdateDisplayName(string name)
+    public async Task UpdateDisplayName(string name)
     {
         if (user != null)
         {
@@ -305,7 +326,8 @@ public class SocialLoginManager : MonoBehaviour
             {
                 DisplayName = name
             };
-            user.UpdateUserProfileAsync(userProfile).ContinueWith(t =>
+
+            await user.UpdateUserProfileAsync(userProfile).ContinueWith(t =>
             {
                 if (t.IsCanceled)
                 {
@@ -323,11 +345,11 @@ public class SocialLoginManager : MonoBehaviour
         }
     }
 
-    public void DeleteAccount()
+    public async Task DeleteAccount()
     {
         if (user != null)
         {
-            user.DeleteAsync().ContinueWith(task =>
+            await user.DeleteAsync().ContinueWith(task =>
             {
                 if (task.IsCanceled)
                 {
@@ -348,6 +370,175 @@ public class SocialLoginManager : MonoBehaviour
                 }
             });
         }
+    }
+
+    private async Task GetCourts()
+    {
+        m_CourtsLoadingBar.SetActive(true);
+
+        CollectionReference courtsRef = firestore.Collection("Courts");
+        Query query = courtsRef.OrderBy("ID");
+
+        DebugLog("Created Firestore Reference");
+
+        string persistentCourtsPath = Application.persistentDataPath + "/Courts";
+
+        if (!Directory.Exists(persistentCourtsPath))
+        {
+            Directory.CreateDirectory(persistentCourtsPath);
+        }
+
+        await query.GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        {
+            if (task.IsCanceled)
+            {
+                DebugLog("query.GetSnapshotAsync() was canceled.");
+                return;
+            }
+            if (task.IsFaulted)
+            {
+                DebugLog("query.GetSnapshotAsync() encountered an error: " + task.Exception);
+                return;
+            }
+
+            QuerySnapshot allCourtsSnapshot = task.Result;
+
+            foreach (DocumentSnapshot documentSnapshot in allCourtsSnapshot.Documents)
+            {
+                Dictionary<string, object> court = documentSnapshot.ToDictionary();
+                StorageReference imageReference = storage.GetReference(court["Image"].ToString());
+
+                string imagePath = Application.persistentDataPath + "/" + court["Image"].ToString();
+
+                if (!File.Exists(imagePath))
+                {
+                    _ = DownloadImageAsync(imageReference, imagePath);
+                }
+
+                //DebugLog(court["ID"].ToString());
+                //DebugLog(court["Name"].ToString());
+                //DebugLog(court["Address"].ToString());
+            }
+        });
+
+        m_CourtsLoadingBar.SetActive(false);
+    }
+
+    private async Task DownloadImageAsync(StorageReference imageReference, string path)
+    {
+        Task imageTask = imageReference.GetFileAsync
+        (
+            path,
+            new StorageProgress<DownloadState>((DownloadState state) =>
+            {
+                DebugLog(string.Format(
+                    "Progress: {0} of {1} bytes transferred.",
+                    state.BytesTransferred,
+                    state.TotalByteCount
+                ));
+            }),
+            CancellationToken.None
+        );
+
+        await imageTask.ContinueWith(resultTask =>
+        {
+            if (!resultTask.IsFaulted && !resultTask.IsCanceled)
+            {
+                Debug.Log("Download finished.");
+            }
+        });
+    }
+
+    public async Task SaveProfile()
+    {
+        m_SaveProfileLoadingBar.SetActive(true);
+
+        string userId = PlayerPrefs.GetString("UserID", string.Empty);
+        if (userId == string.Empty)
+        {
+            m_SaveProfileLoadingBar.SetActive(false);
+            return;
+        }
+
+        await UpdateDisplayName(ProfileTab.Instance.m_NameInputField.text);
+
+        DocumentReference documentReference = firestore.Collection("Profiles").Document(userId);
+        Dictionary<string, object> profile = new Dictionary<string, object>
+        {
+            ["UserID"] = userId,
+            ["Name"] = ProfileTab.Instance.m_NameInputField.text,
+            ["TeamPosition"] = ProfileTab.Instance.m_CardPosition.text,
+            ["CardTopColor"] = ColorUtility.ToHtmlStringRGB(ProfileTab.Instance.m_CardTopColor.color),
+            ["CardBottomColor"] = ColorUtility.ToHtmlStringRGB(ProfileTab.Instance.m_CardBottomColor.color),
+        };
+        
+        await documentReference.SetAsync(profile).ContinueWithOnMainThread(task =>
+        {
+            m_SaveProfileLoadingBar.SetActive(true);
+            DebugLog("Save Profile Success");
+        });
+    }
+
+    public async Task GetProfile()
+    {
+        m_SaveProfileLoadingBar.SetActive(true);
+
+        string userId = PlayerPrefs.GetString("UserID", string.Empty);
+        if (userId == string.Empty)
+        {
+            m_SaveProfileLoadingBar.SetActive(false);
+            return;
+        }
+
+        DocumentReference documentReference = firestore.Collection("Profiles").Document(userId);
+        
+        await documentReference.GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        {
+            if (task.IsCanceled)
+            {
+                DebugLog("query.GetSnapshotAsync() was canceled.");
+                return;
+            }
+            if (task.IsFaulted)
+            {
+                DebugLog("query.GetSnapshotAsync() encountered an error: " + task.Exception);
+                return;
+            }
+
+            DocumentSnapshot documentSnapshot = task.Result;
+
+            if (documentSnapshot.Exists)
+            {
+                Dictionary<string, object> profile = documentSnapshot.ToDictionary();
+
+                string teamPosition = profile["TeamPosition"].ToString();
+                string cardTopColor = profile["CardTopColor"].ToString();
+                string cardBottomColor = profile["CardBottomColor"].ToString();
+                _ = ProfileTab.Instance.m_CardTopColor.color;
+                ColorUtility.TryParseHtmlString(cardTopColor, out Color topColor);
+                ProfileTab.Instance.m_CardTopColor.color = topColor;
+                _ = ProfileTab.Instance.m_CardBottomColor.color;
+                ColorUtility.TryParseHtmlString(cardBottomColor, out Color bottomColor);
+                ProfileTab.Instance.m_CardBottomColor.color = bottomColor;
+                int index = ProfileTab.Instance.m_TeamPositionSelector.elements.IndexOf(teamPosition);
+                ProfileTab.Instance.m_TeamPositionSelector.index = index;
+                ProfileTab.Instance.m_CardPosition.text = ProfileTab.Instance.m_TeamPositionSelector.elements[index];
+                ProfileTab.Instance.m_CardPosition.color = ProfileTab.Instance.SetInvertedColor(ProfileTab.Instance.m_CardBottomColor.color);
+                DebugLog(teamPosition);
+                DebugLog(cardTopColor);
+                DebugLog(cardBottomColor);
+            }
+            else
+            {
+                DebugLog(string.Format("Document {0} does not exist!", documentSnapshot.Id));
+            }
+        });
+    }
+
+    private void OnApplicationQuit()
+    {
+        firestore.TerminateAsync();
+        firestore.ClearPersistenceAsync();
     }
 
     private void DebugLog(string text)
