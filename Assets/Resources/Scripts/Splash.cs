@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class SplashSceneController : MonoBehaviour
+public class Splash : MonoBehaviour
 {
     private IEnumerator Start()
     {

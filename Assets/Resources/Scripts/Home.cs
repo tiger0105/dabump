@@ -1,16 +1,23 @@
-﻿using System.Collections;
+﻿using DigitalRubyShared;
+using System.Collections;
 using System.IO;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.UI.Extensions;
 
 public class Home : MonoBehaviour
 {
     public static Home Instance;
 
+    [Header("Recently Visited Courts Section")]
     [SerializeField] private GameObject m_CourtCardPrefab;
     [SerializeField] private ScrollRect m_CourtScrollRect;
     [SerializeField] private Transform m_CourtListTransform;
+    [Header("Get Started Section")]
+    [SerializeField] public HorizontalScrollSnap m_HorizontalScrollSnap;
+    [SerializeField] public Transform m_NavigationBar;
 
     private void Awake()
     {
@@ -41,14 +48,6 @@ public class Home : MonoBehaviour
     public void UpdateCourt()
     {
 
-    }
-
-    public void UpdateCourtImageDownloadProgress(int id, int percentage)
-    {
-        GameObject loaderSlider = m_CourtListTransform.GetChild(id - 1).GetChild(1).GetChild(0).GetChild(1).gameObject;
-        loaderSlider.SetActive(true);
-        loaderSlider.transform.GetChild(0).GetComponent<Slider>().value = percentage;
-        loaderSlider.transform.GetChild(0).GetChild(1).GetComponent<TextMeshProUGUI>().text = "Downloading: " + percentage + "%";
     }
 
     public void SetCourtImage(int id, string imagePath)
@@ -88,5 +87,18 @@ public class Home : MonoBehaviour
         yield return new WaitForEndOfFrame();
         m_CourtScrollRect.horizontalNormalizedPosition = 0;
         LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)m_CourtScrollRect.transform);
+    }
+
+    public void Navigate(bool isOn)
+    {
+        if (isOn == true)
+        {
+            m_HorizontalScrollSnap.GoToScreen(GetComponent<ToggleGroup>().ActiveToggles().First().transform.GetSiblingIndex());
+        }
+    }
+
+    public void NavigatePage()
+    {
+        m_NavigationBar.GetChild(m_HorizontalScrollSnap._currentPage).GetComponent<Toggle>().isOn = true;
     }
 }
