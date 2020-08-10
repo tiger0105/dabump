@@ -44,3 +44,14 @@ public class PlayerCard
         CardBottomColor = cardBottomColor;
     }
 }
+
+
+[Serializable]
+public static class AppData
+{
+    public static string _UserID = "";
+    public static string _UserName = "";
+    public static string _UserEmail = "";
+    public static string _SocialPlatform = "";
+    public static bool _IsLoggedIn = false;
+}

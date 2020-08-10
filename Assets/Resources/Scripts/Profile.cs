@@ -62,6 +62,11 @@ public class Profile : MonoBehaviour
 
                 if (auth != null)
                 {
+                    AppData._UserID = "";
+                    AppData._UserName = "";
+                    AppData._UserEmail = "";
+                    AppData._SocialPlatform = "";
+                    AppData._IsLoggedIn = false;
                     auth.SignOut();
                     Main.Instance.SwitchToLoginPanel();
                 }
@@ -102,8 +107,7 @@ public class Profile : MonoBehaviour
     {
         m_LoadingBar.SetActive(true);
 
-        string userId = PlayerPrefs.GetString("UserID", string.Empty);
-        if (userId == string.Empty)
+        if (AppData._UserID == string.Empty)
         {
             m_LoadingBar.SetActive(false);
             return;
@@ -111,10 +115,10 @@ public class Profile : MonoBehaviour
 
         await UpdateDisplayName(user, m_NameInputField.text);
 
-        DocumentReference documentReference = firestore.Collection("Profiles").Document(userId);
+        DocumentReference documentReference = firestore.Collection("Profiles").Document(AppData._UserID);
         Dictionary<string, object> profile = new Dictionary<string, object>
         {
-            ["UserID"] = userId,
+            ["UserID"] = AppData._UserID,
             ["Name"] = m_NameInputField.text,
             ["Image"] = "",
             ["Rank"] = 0,
@@ -137,14 +141,13 @@ public class Profile : MonoBehaviour
     {
         m_LoadingBar.SetActive(true);
 
-        string userId = PlayerPrefs.GetString("UserID", string.Empty);
-        if (userId == string.Empty)
+        if (AppData._UserID == string.Empty)
         {
             m_LoadingBar.SetActive(false);
             return;
         }
 
-        DocumentReference documentReference = firestore.Collection("Profiles").Document(userId);
+        DocumentReference documentReference = firestore.Collection("Profiles").Document(AppData._UserID);
 
         await documentReference.GetSnapshotAsync().ContinueWithOnMainThread(task =>
         {
@@ -195,9 +198,9 @@ public class Profile : MonoBehaviour
             }
         });
 
-        m_Connected.text = PlayerPrefs.GetInt("IsLoggedIn", 0) == 0 ? string.Empty : "Connected";
-        m_SocialIcon.sprite = PlayerPrefs.GetString("SocialPlatform", "Google") == "Google" ? m_SocialIcons[0] : m_SocialIcons[1];
-        m_SocialLoginEmail.text = PlayerPrefs.GetString("UserEmail", string.Empty);
+        m_Connected.text = AppData._IsLoggedIn == false ? string.Empty : "Connected";
+        m_SocialIcon.sprite = AppData._SocialPlatform == "Google" ? m_SocialIcons[0] : m_SocialIcons[1];
+        m_SocialLoginEmail.text = AppData._UserEmail;
         if (m_SocialLoginEmail.text == string.Empty)
             m_SocialLoginEmail.text = "Email is not set as public. Please sign in again.";
 

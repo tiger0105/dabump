@@ -80,7 +80,8 @@ public class FirebaseManager : MonoBehaviour
 
     private async Task InitializeFirebaseAsync()
     {
-        auth = FirebaseAuth.GetAuth(FirebaseApp.Create());
+        FirebaseApp app = FirebaseApp.Create();
+        auth = FirebaseAuth.GetAuth(app);
         auth.StateChanged += AuthStateChanged;
         AuthStateChanged(this, null);
 
@@ -93,11 +94,13 @@ public class FirebaseManager : MonoBehaviour
             FB.ActivateApp();
         }
 
-        firestore = FirebaseFirestore.GetInstance(FirebaseApp.Create());
-        storage = FirebaseStorage.GetInstance(FirebaseApp.Create());
+        firestore = FirebaseFirestore.GetInstance(app);
+        storage = FirebaseStorage.GetInstance(app);
 
         await FetchCourtsAsync();
         await FetchPlayersInfoAsync();
+
+        if (Main.Instance != null) Main.Instance.HideLoginLoadingBar();
     }
 
     private void AuthStateChanged(object sender, EventArgs eventArgs)
@@ -171,13 +174,15 @@ public class FirebaseManager : MonoBehaviour
 
                 user = auth.CurrentUser;
 
-                PlayerPrefs.SetString("UserID", user.UserId);
-                PlayerPrefs.SetString("UserName", user.DisplayName);
-                PlayerPrefs.SetString("UserEmail", user.Email);
-                PlayerPrefs.SetString("SocialPlatform", "Google");
-                PlayerPrefs.SetInt("IsLoggedIn", 1);
+                AppData._UserID = user.UserId;
+                AppData._UserName = user.DisplayName;
+                AppData._UserEmail = user.Email;
+                AppData._SocialPlatform = "Google";
+                AppData._IsLoggedIn = true;
 
                 await Profile.Instance.GetProfileAsync(firestore);
+
+                PlayerInfo.Instance.BuildPlayerInfoList();
 
                 Main.Instance.SwitchToMainPanel();
                 return;
@@ -229,13 +234,15 @@ public class FirebaseManager : MonoBehaviour
 
             user = auth.CurrentUser;
 
-            PlayerPrefs.SetString("UserID", user.UserId);
-            PlayerPrefs.SetString("UserName", user.DisplayName);
-            PlayerPrefs.SetString("UserEmail", user.Email);
-            PlayerPrefs.SetString("SocialPlatform", "Facebook");
-            PlayerPrefs.SetInt("IsLoggedIn", 1);
+            AppData._UserID = user.UserId;
+            AppData._UserName = user.DisplayName;
+            AppData._UserEmail = user.Email;
+            AppData._SocialPlatform = "Facebook";
+            AppData._IsLoggedIn = true;
 
             await Profile.Instance.GetProfileAsync(firestore);
+
+            PlayerInfo.Instance.BuildPlayerInfoList();
 
             Main.Instance.SwitchToMainPanel();
             return;
@@ -248,9 +255,8 @@ public class FirebaseManager : MonoBehaviour
     {
         if (FB.IsLoggedIn)
         {
-            if (PlayerPrefs.GetInt("IsLoggedIn", 0) == 1
-                && PlayerPrefs.GetString("SocialPlatform", "Google") == "Facebook"
-                && PlayerPrefs.GetString("UserID", string.Empty) != string.Empty)
+            if (AppData._SocialPlatform == "Facebook"
+                && AppData._UserID != string.Empty)
             {
                 _ = FacebookAuth(AccessToken.CurrentAccessToken.TokenString);
             }
@@ -442,13 +448,13 @@ public class FirebaseManager : MonoBehaviour
     {
         await imageReference.GetFileAsync(path).ContinueWith(resultTask =>
         {
-            if (!resultTask.IsFaulted && !resultTask.IsCanceled)
-            {
-                if (PlayerInfo.Instance != null)
-                {
-                    PlayerInfo.Instance.SetPlayerImage(id, path);
-                }
-            }
+            //if (!resultTask.IsFaulted && !resultTask.IsCanceled)
+            //{
+            //    if (PlayerInfo.Instance != null)
+            //    {
+            //        PlayerInfo.Instance.SetPlayerImage(id, path);
+            //    }
+            //}
 
             m_ProfilesListDownloaded[id] = true;
             if (m_ProfilesListDownloaded.Count == m_ProfilesListCount)
