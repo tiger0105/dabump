@@ -107,14 +107,15 @@ public class Courts : MonoBehaviour
 
     private async Task SetCheckInCourt(FirebaseFirestore firestore)
     {
-        if (AppData._UserID == string.Empty)
+        string userId = PlayerPrefs.GetString("UserID", string.Empty);
+        if (userId == string.Empty)
         {
             return;
         }
 
         int[] courts = { 1, 2, 3, 4 };
 
-        DocumentReference documentReference = firestore.Collection("Profiles").Document(AppData._UserID);
+        DocumentReference documentReference = firestore.Collection("Profiles").Document(userId);
         Dictionary<string, object> profile = new Dictionary<string, object>
         {
             ["Courts"] = courts,

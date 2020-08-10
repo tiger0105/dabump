@@ -17,7 +17,12 @@ public class PlayerInfo : MonoBehaviour
         Instance = this;
     }
 
-    public void BuildPlayerInfoList()
+    private void Start()
+    {
+        BuildPlayerInfoList();
+    }
+
+    private void BuildPlayerInfoList()
     {
         ClearPlayerInfoList();
 
@@ -47,7 +52,8 @@ public class PlayerInfo : MonoBehaviour
 
     private void AddPlayerCard(int cardIndex, PlayerCard playerCard)
     {
-        if (AppData._UserID == playerCard.UserID)
+        string userId = PlayerPrefs.GetString("UserID", string.Empty);
+        if (userId == playerCard.UserID)
         {
             return;
         }
@@ -83,9 +89,6 @@ public class PlayerInfo : MonoBehaviour
 
     public void SetPlayerImage(int id, string imagePath)
     {
-        if (m_PlayerInfoListTransform.childCount <= id)
-            return;
-
         FileInfo fileInfo = new FileInfo(imagePath);
 
         if (!fileInfo.Exists) return;

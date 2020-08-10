@@ -16,11 +16,6 @@ public class Main : MonoBehaviour
         Instance = this;
     }
 
-    private void Start()
-    {
-        ShowLoginLoadingBar();
-    }
-
     public void ShowLoginLoadingBar()
     {
         m_SplashScreen.GetComponent<Animator>().Play("Login to Loading");
@@ -43,11 +38,6 @@ public class Main : MonoBehaviour
 
     public void SwitchToLoginPanel()
     {
-        AppData._UserID = "";
-        AppData._UserName = "";
-        AppData._UserEmail = "";
-        AppData._SocialPlatform = "";
-        AppData._IsLoggedIn = false;
         m_MenuManager.GetComponent<TopPanelManager>().PanelAnim(0);
         m_MenuManager.GetComponent<BlurManager>().BlurInAnim();
         m_SplashScreen.GetComponent<Animator>().Play("Login");
