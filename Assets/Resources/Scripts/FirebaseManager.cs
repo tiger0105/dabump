@@ -80,8 +80,7 @@ public class FirebaseManager : MonoBehaviour
 
     private async Task InitializeFirebaseAsync()
     {
-        FirebaseApp app = FirebaseApp.Create();
-        auth = FirebaseAuth.GetAuth(app);
+        auth = FirebaseAuth.GetAuth(FirebaseApp.DefaultInstance);
         auth.StateChanged += AuthStateChanged;
         AuthStateChanged(this, null);
 
@@ -94,8 +93,8 @@ public class FirebaseManager : MonoBehaviour
             FB.ActivateApp();
         }
 
-        firestore = FirebaseFirestore.GetInstance(app);
-        storage = FirebaseStorage.GetInstance(app);
+        firestore = FirebaseFirestore.GetInstance(FirebaseApp.DefaultInstance);
+        storage = FirebaseStorage.GetInstance(FirebaseApp.DefaultInstance);
 
         await FetchCourtsAsync();
         await FetchPlayersInfoAsync();
@@ -120,6 +119,7 @@ public class FirebaseManager : MonoBehaviour
 
     private void OnApplicationQuit()
     {
+        FirebaseApp.DefaultInstance.Dispose();
         if (firestore != null)
         {
             firestore.TerminateAsync();

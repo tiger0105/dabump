@@ -21,7 +21,7 @@ public class PlayerInfo : MonoBehaviour
     {
         ClearPlayerInfoList();
 
-        if (FirebaseManager.Instance == null || FirebaseManager.Instance.m_CourtList == null)
+        if (FirebaseManager.Instance == null || FirebaseManager.Instance.m_PlayerCardList == null)
             return;
 
         int cardIndex = 0;
@@ -32,7 +32,7 @@ public class PlayerInfo : MonoBehaviour
             cardIndex++;
         }
 
-        UpdateCourtListLayout();
+        UpdatePlayerInfoListLayout();
     }
 
     private void ClearPlayerInfoList()
@@ -81,11 +81,6 @@ public class PlayerInfo : MonoBehaviour
         return inverted;
     }
 
-    private void UpdatePlayerInfo()
-    {
-
-    }
-
     public void SetPlayerImage(int id, string imagePath)
     {
         if (m_PlayerInfoListTransform.childCount <= id)
@@ -116,7 +111,7 @@ public class PlayerInfo : MonoBehaviour
         m_PlayerInfoListTransform.GetChild(id).GetChild(3).GetChild(0).GetChild(0).GetComponent<RawImage>().texture = texture;
     }
 
-    private void UpdateCourtListLayout()
+    private void UpdatePlayerInfoListLayout()
     {
         StartCoroutine(ApplyScrollPosition());
     }
