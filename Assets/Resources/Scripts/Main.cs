@@ -9,7 +9,7 @@ public class Main : MonoBehaviour
     [SerializeField] private GameObject m_SplashScreen;
     [SerializeField] private GameObject m_Background;
     [SerializeField] private GameObject m_MainPanel;
-    [SerializeField] private GameObject m_MenuManager;
+    [SerializeField] public GameObject m_MenuManager;
 
     private void Awake()
     {

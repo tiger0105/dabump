@@ -1,4 +1,5 @@
 ﻿using DigitalRubyShared;
+using Michsky.UI.Frost;
 using System.Collections;
 using System.IO;
 using System.Linq;
@@ -93,12 +94,20 @@ public class Home : MonoBehaviour
     {
         if (isOn == true)
         {
-            m_HorizontalScrollSnap.GoToScreen(GetComponent<ToggleGroup>().ActiveToggles().First().transform.GetSiblingIndex());
+            m_HorizontalScrollSnap.GoToScreen(m_NavigationBar.GetComponent<ToggleGroup>().ActiveToggles().First().transform.GetSiblingIndex());
         }
     }
 
     public void NavigatePage()
     {
         m_NavigationBar.GetChild(m_HorizontalScrollSnap._currentPage).GetComponent<Toggle>().isOn = true;
+    }
+
+    public void GetStarted()
+    {
+        Main.Instance.m_MenuManager.GetComponent<TopPanelManager>().PanelAnim(3);
+        Main.Instance.m_MenuManager.GetComponent<BlurManager>().BlurInAnim();
+        m_HorizontalScrollSnap.GoToScreen(0);
+        m_NavigationBar.GetChild(0).GetComponent<Toggle>().isOn = true;
     }
 }

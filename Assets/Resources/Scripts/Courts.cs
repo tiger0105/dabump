@@ -30,6 +30,9 @@ public class Courts : MonoBehaviour
     {
         ClearCourtsList();
 
+        if (FirebaseManager.Instance == null || FirebaseManager.Instance.m_CourtList == null)
+            return;
+
         foreach (Court court in FirebaseManager.Instance.m_CourtList)
         {
             AddCourt(court.ID, court.Name, court.Address, court.ImagePath);
@@ -63,7 +66,7 @@ public class Courts : MonoBehaviour
 
     }
 
-    private void SetCourtImage(int id, string imagePath)
+    public void SetCourtImage(int id, string imagePath)
     {
         FileInfo fileInfo = new FileInfo(imagePath);
 

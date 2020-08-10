@@ -266,16 +266,25 @@ public class FirebaseManager : MonoBehaviour
                 if (canParse == false) continue;
 
                 bool isImageDownloaded = File.Exists(imagePath);
-                if (!isImageDownloaded) _ = DownloadImageAsync(imageReference, imagePath);
+                if (!isImageDownloaded) _ = DownloadImageAsync(imageReference, imagePath, imageID);
 
                 m_CourtList.Add(new Court(imageID, court["Name"].ToString(), court["Address"].ToString(), imagePath));
             }
         });
     }
 
-    private async Task DownloadImageAsync(StorageReference imageReference, string path)
+    private async Task DownloadImageAsync(StorageReference imageReference, string path, int id)
     {
-        await imageReference.GetFileAsync(path);
+        await imageReference.GetFileAsync(path).ContinueWith(resultTask =>
+        {
+            if (!resultTask.IsFaulted && !resultTask.IsCanceled)
+            {
+                if (Courts.Instance != null)
+                {
+                    Courts.Instance.SetCourtImage(id, path);
+                }
+            }
+        });
     }
     #endregion
 }
