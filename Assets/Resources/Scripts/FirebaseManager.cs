@@ -68,18 +68,21 @@ public class FirebaseManager : MonoBehaviour
 
     private async Task InitializeFirebaseAsync()
     {
-        FirebaseApp app = FirebaseApp.Create();
-        auth = FirebaseAuth.GetAuth(app);
+        auth = FirebaseAuth.GetAuth(FirebaseApp.Create());
         auth.StateChanged += AuthStateChanged;
         AuthStateChanged(this, null);
 
-        if (FB.IsInitialized)
+        if (!FB.IsInitialized)
+        {
+            FB.Init(InitCallback, OnHideUnity);
+        }
+        else
         {
             FB.ActivateApp();
         }
 
-        firestore = FirebaseFirestore.GetInstance(app);
-        storage = FirebaseStorage.GetInstance(app);
+        firestore = FirebaseFirestore.GetInstance(FirebaseApp.Create());
+        storage = FirebaseStorage.GetInstance(FirebaseApp.Create());
 
         await FetchCourtsAsync();
         await FetchPlayersInfoAsync();
@@ -227,6 +230,41 @@ public class FirebaseManager : MonoBehaviour
         });
 
         Main.Instance.HideLoginLoadingBar();
+    }
+
+    private void InitCallback()
+    {
+        if (FB.IsLoggedIn)
+        {
+            if (PlayerPrefs.GetInt("IsLoggedIn", 0) == 1
+                && PlayerPrefs.GetString("SocialPlatform", "Google") == "Facebook"
+                && PlayerPrefs.GetString("UserID", string.Empty) != string.Empty)
+            {
+                _ = FacebookAuth(AccessToken.CurrentAccessToken.TokenString);
+            }
+            else
+            {
+                Main.Instance.HideLoginLoadingBar();
+                Debug.Log("User not yet loged FB or loged out");
+            }
+        }
+        else
+        {
+            Main.Instance.HideLoginLoadingBar();
+            Debug.Log("User cancelled login");
+        }
+    }
+
+    private void OnHideUnity(bool isGameShown)
+    {
+        if (!isGameShown)
+        {
+            Time.timeScale = 0;
+        }
+        else
+        {
+            Time.timeScale = 1;
+        }
     }
     #endregion
 
