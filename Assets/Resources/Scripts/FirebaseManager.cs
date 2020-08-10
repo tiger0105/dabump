@@ -27,6 +27,7 @@ public class FirebaseManager : MonoBehaviour
     private FirebaseStorage storage;
 
     [HideInInspector] public List<Court> m_CourtList;
+    [HideInInspector] public List<PlayerCard> m_PlayerCardList;
 
     private void Awake()
     {
@@ -46,14 +47,14 @@ public class FirebaseManager : MonoBehaviour
     private void Start()
     {
 #if UNITY_EDITOR
-        _ = InitializeFirebaseAsync();
+        InitializeFirebase();
 #else
-        FirebaseApp.CheckAndFixDependenciesAsync().ContinueWith(async task =>
+        FirebaseApp.CheckAndFixDependenciesAsync().ContinueWith(task =>
         {
             dependencyStatus = task.Result;
             if (dependencyStatus == DependencyStatus.Available)
             {
-                await InitializeFirebaseAsync();
+                InitializeFirebase();
             }
             else
             {
@@ -62,9 +63,10 @@ public class FirebaseManager : MonoBehaviour
         });
 #endif
         m_CourtList = new List<Court>();
+        m_PlayerCardList = new List<PlayerCard>();
     }
 
-    private async Task InitializeFirebaseAsync()
+    private void InitializeFirebase()
     {
         FirebaseApp app = FirebaseApp.Create();
         auth = FirebaseAuth.GetAuth(app);
@@ -79,7 +81,8 @@ public class FirebaseManager : MonoBehaviour
         firestore = FirebaseFirestore.GetInstance(app);
         storage = FirebaseStorage.GetInstance(app);
 
-        await FetchCourtsAsync();
+        _ = FetchCourtsAsync();
+        _ = FetchPlayersInfoAsync();
     }
 
     private void AuthStateChanged(object sender, EventArgs eventArgs)
@@ -244,12 +247,12 @@ public class FirebaseManager : MonoBehaviour
         {
             if (task.IsCanceled)
             {
-                Debug.Log("GetCourts() -> query.GetSnapshotAsync() was canceled.");
+                Debug.Log("FetchCourtsAsync() -> query.GetSnapshotAsync() was canceled.");
                 return;
             }
             if (task.IsFaulted)
             {
-                Debug.Log("GetCourts() -> query.GetSnapshotAsync() encountered an error: " + task.Exception);
+                Debug.Log("FetchCourtsAsync() -> query.GetSnapshotAsync() encountered an error: " + task.Exception);
                 return;
             }
 
@@ -266,14 +269,14 @@ public class FirebaseManager : MonoBehaviour
                 if (canParse == false) continue;
 
                 bool isImageDownloaded = File.Exists(imagePath);
-                if (!isImageDownloaded) _ = DownloadImageAsync(imageReference, imagePath, imageID);
+                if (!isImageDownloaded) _ = DownloadCourtImageAsync(imageReference, imagePath, imageID);
 
                 m_CourtList.Add(new Court(imageID, court["Name"].ToString(), court["Address"].ToString(), imagePath));
             }
         });
     }
 
-    private async Task DownloadImageAsync(StorageReference imageReference, string path, int id)
+    private async Task DownloadCourtImageAsync(StorageReference imageReference, string path, int id)
     {
         await imageReference.GetFileAsync(path).ContinueWith(resultTask =>
         {
@@ -282,6 +285,79 @@ public class FirebaseManager : MonoBehaviour
                 if (Courts.Instance != null)
                 {
                     Courts.Instance.SetCourtImage(id, path);
+                }
+            }
+        });
+    }
+    #endregion
+
+    #region Players Information
+    private async Task FetchPlayersInfoAsync()
+    {
+        CollectionReference playersRef = firestore.Collection("Profiles");
+        Query query = playersRef.OrderBy("Name");
+
+        string persistentCourtsPath = Application.persistentDataPath + "/Profiles";
+
+        if (!Directory.Exists(persistentCourtsPath))
+        {
+            Directory.CreateDirectory(persistentCourtsPath);
+        }
+
+        await query.GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        {
+            if (task.IsCanceled)
+            {
+                Debug.Log("FetchPlayersInfoAsync() -> query.GetSnapshotAsync() was canceled.");
+                return;
+            }
+            if (task.IsFaulted)
+            {
+                Debug.Log("FetchPlayersInfoAsync() -> query.GetSnapshotAsync() encountered an error: " + task.Exception);
+                return;
+            }
+
+            QuerySnapshot allPlayersSnapshot = task.Result;
+
+            int playerIndex = 0;
+
+            foreach (DocumentSnapshot documentSnapshot in allPlayersSnapshot.Documents)
+            {
+                Dictionary<string, object> player = documentSnapshot.ToDictionary();
+                
+                string imagePath = "";
+
+                if (player["Image"].ToString().Length > 0 && player["Image"].ToString().Contains("Profiles/"))
+                {
+                    StorageReference imageReference = storage.GetReference(player["Image"].ToString());
+
+                    imagePath = Application.persistentDataPath + "/" + player["Image"].ToString();
+
+                    bool isImageDownloaded = File.Exists(imagePath);
+                    if (!isImageDownloaded) _ = DownloadPlayerImageAsync(imageReference, imagePath, playerIndex);
+                }
+
+                int.TryParse(player["Rank"].ToString(), out int rank);
+                int.TryParse(player["Badges"].ToString(), out int badges);
+                bool.TryParse(player["IsMVP"].ToString(), out bool isMVP);
+
+                m_PlayerCardList.Add(new PlayerCard(player["UserID"].ToString(), player["Name"].ToString(), imagePath, rank, badges, 
+                    isMVP, player["TeamPosition"].ToString(), player["CardTopColor"].ToString(), player["CardBottomColor"].ToString()));
+
+                playerIndex++;
+            }
+        });
+    }
+
+    private async Task DownloadPlayerImageAsync(StorageReference imageReference, string path, int id)
+    {
+        await imageReference.GetFileAsync(path).ContinueWith(resultTask =>
+        {
+            if (!resultTask.IsFaulted && !resultTask.IsCanceled)
+            {
+                if (PlayerInfo.Instance != null)
+                {
+                    PlayerInfo.Instance.SetPlayerImage(id, path);
                 }
             }
         });

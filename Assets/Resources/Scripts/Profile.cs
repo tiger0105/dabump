@@ -116,6 +116,10 @@ public class Profile : MonoBehaviour
         {
             ["UserID"] = userId,
             ["Name"] = m_NameInputField.text,
+            ["Image"] = "",
+            ["Rank"] = 0,
+            ["Badges"] = 0,
+            ["IsMVP"] = false,
             ["TeamPosition"] = m_CardPosition.text,
             ["CardTopColor"] = ColorUtility.ToHtmlStringRGB(m_CardTopColor.color),
             ["CardBottomColor"] = ColorUtility.ToHtmlStringRGB(m_CardBottomColor.color),
