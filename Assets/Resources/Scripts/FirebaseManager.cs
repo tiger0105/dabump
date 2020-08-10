@@ -47,14 +47,14 @@ public class FirebaseManager : MonoBehaviour
     private void Start()
     {
 #if UNITY_EDITOR
-        InitializeFirebase();
+        _ = InitializeFirebaseAsync();
 #else
         FirebaseApp.CheckAndFixDependenciesAsync().ContinueWith(task =>
         {
             dependencyStatus = task.Result;
             if (dependencyStatus == DependencyStatus.Available)
             {
-                InitializeFirebase();
+                _ = InitializeFirebaseAsync();
             }
             else
             {
@@ -66,7 +66,7 @@ public class FirebaseManager : MonoBehaviour
         m_PlayerCardList = new List<PlayerCard>();
     }
 
-    private void InitializeFirebase()
+    private async Task InitializeFirebaseAsync()
     {
         FirebaseApp app = FirebaseApp.Create();
         auth = FirebaseAuth.GetAuth(app);
@@ -81,8 +81,8 @@ public class FirebaseManager : MonoBehaviour
         firestore = FirebaseFirestore.GetInstance(app);
         storage = FirebaseStorage.GetInstance(app);
 
-        _ = FetchCourtsAsync();
-        _ = FetchPlayersInfoAsync();
+        await FetchCourtsAsync();
+        await FetchPlayersInfoAsync();
     }
 
     private void AuthStateChanged(object sender, EventArgs eventArgs)

@@ -38,6 +38,7 @@ public class Main : MonoBehaviour
 
     public void SwitchToLoginPanel()
     {
+        m_MenuManager.GetComponent<TopPanelManager>().PanelAnim(0);
         m_MenuManager.GetComponent<BlurManager>().BlurInAnim();
         m_SplashScreen.GetComponent<Animator>().Play("Login");
         m_MainPanel.GetComponent<Animator>().Play("Wait");
