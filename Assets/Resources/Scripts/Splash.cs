@@ -6,7 +6,12 @@ public class Splash : MonoBehaviour
 {
     private IEnumerator Start()
     {
-        yield return new WaitForSeconds(7f);
+        yield return new WaitForSeconds(5.5f);
+        yield return new WaitUntil(() => 
+        FirebaseManager.Instance.m_IsCourtsDownloadProgressCompleted == true 
+        && FirebaseManager.Instance.m_IsProfilesDownloadProgressCompleted == true);
+        GameObject.Find("Canvas").GetComponent<Animator>().Play("Logo_FadeOut");
+        yield return new WaitForSeconds(1.5f);
         SceneManager.LoadSceneAsync(1);
     }
 }

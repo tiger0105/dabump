@@ -8,6 +8,7 @@ using Google;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 using Query = Firebase.Firestore.Query;
@@ -28,6 +29,14 @@ public class FirebaseManager : MonoBehaviour
 
     [HideInInspector] public List<Court> m_CourtList;
     [HideInInspector] public List<PlayerCard> m_PlayerCardList;
+
+    [HideInInspector] public bool m_IsCourtsDownloadProgressCompleted = false;
+    [HideInInspector] public bool m_IsProfilesDownloadProgressCompleted = false;
+
+    private List<bool> m_CourtsListDownloaded;
+    private List<bool> m_ProfilesListDownloaded;
+    private int m_CourtsListCount = 0;
+    private int m_ProfilesListCount = 0;
 
     private void Awake()
     {
@@ -64,6 +73,9 @@ public class FirebaseManager : MonoBehaviour
 #endif
         m_CourtList = new List<Court>();
         m_PlayerCardList = new List<PlayerCard>();
+
+        m_CourtsListDownloaded = new List<bool>();
+        m_ProfilesListDownloaded = new List<bool>();
     }
 
     private async Task InitializeFirebaseAsync()
@@ -244,13 +256,13 @@ public class FirebaseManager : MonoBehaviour
             }
             else
             {
-                Main.Instance.HideLoginLoadingBar();
+                if (Main.Instance != null) Main.Instance.HideLoginLoadingBar();
                 Debug.Log("User not yet loged FB or loged out");
             }
         }
         else
-        {
-            Main.Instance.HideLoginLoadingBar();
+        { 
+            if (Main.Instance != null) Main.Instance.HideLoginLoadingBar();
             Debug.Log("User cancelled login");
         }
     }
@@ -296,6 +308,8 @@ public class FirebaseManager : MonoBehaviour
 
             QuerySnapshot allCourtsSnapshot = task.Result;
 
+            m_CourtsListCount = allCourtsSnapshot.Documents.Count();
+
             foreach (DocumentSnapshot documentSnapshot in allCourtsSnapshot.Documents)
             {
                 Dictionary<string, object> court = documentSnapshot.ToDictionary();
@@ -307,9 +321,20 @@ public class FirebaseManager : MonoBehaviour
                 if (canParse == false) continue;
 
                 bool isImageDownloaded = File.Exists(imagePath);
-                if (!isImageDownloaded) _ = DownloadCourtImageAsync(imageReference, imagePath, imageID);
+                if (!isImageDownloaded)
+                {
+                    m_CourtsListDownloaded.Add(false);
+                    _ = DownloadCourtImageAsync(imageReference, imagePath, imageID);
+                }
+                else
+                {
+                    m_CourtsListDownloaded.Add(true);
+                }
 
                 m_CourtList.Add(new Court(imageID, court["Name"].ToString(), court["Address"].ToString(), imagePath));
+
+                if (m_CourtsListDownloaded.Count == m_CourtsListCount)
+                    VerifyCourtsListDownloadProgressCompleted();
             }
         });
     }
@@ -325,7 +350,22 @@ public class FirebaseManager : MonoBehaviour
                     Courts.Instance.SetCourtImage(id, path);
                 }
             }
+
+            m_CourtsListDownloaded[id - 1] = true;
+            if (m_CourtsListDownloaded.Count == m_CourtsListCount)
+                VerifyCourtsListDownloadProgressCompleted();
         });
+    }
+
+    private void VerifyCourtsListDownloadProgressCompleted()
+    {
+        for (int i = 0; i < m_CourtsListDownloaded.Count; i ++)
+        {
+            if (m_CourtsListDownloaded[i] == false)
+                return;
+        }
+
+        m_IsCourtsDownloadProgressCompleted = true;
     }
     #endregion
 
@@ -372,7 +412,15 @@ public class FirebaseManager : MonoBehaviour
                     imagePath = Application.persistentDataPath + "/" + player["Image"].ToString();
 
                     bool isImageDownloaded = File.Exists(imagePath);
-                    if (!isImageDownloaded) _ = DownloadPlayerImageAsync(imageReference, imagePath, playerIndex);
+                    if (!isImageDownloaded)
+                    {
+                        m_ProfilesListDownloaded.Add(false);
+                        _ = DownloadPlayerImageAsync(imageReference, imagePath, playerIndex);
+                    }
+                    else
+                    {
+                        m_ProfilesListDownloaded.Add(true);
+                    }
                 }
 
                 int.TryParse(player["Rank"].ToString(), out int rank);
@@ -383,6 +431,9 @@ public class FirebaseManager : MonoBehaviour
                     isMVP, player["TeamPosition"].ToString(), player["CardTopColor"].ToString(), player["CardBottomColor"].ToString()));
 
                 playerIndex++;
+
+                if (m_ProfilesListDownloaded.Count == m_ProfilesListCount)
+                    VerifyProfilesListDownloadProgressCompleted();
             }
         });
     }
@@ -398,7 +449,22 @@ public class FirebaseManager : MonoBehaviour
                     PlayerInfo.Instance.SetPlayerImage(id, path);
                 }
             }
+
+            m_ProfilesListDownloaded[id] = true;
+            if (m_ProfilesListDownloaded.Count == m_ProfilesListCount)
+                VerifyProfilesListDownloadProgressCompleted();
         });
+    }
+
+    private void VerifyProfilesListDownloadProgressCompleted()
+    {
+        for (int i = 0; i < m_ProfilesListDownloaded.Count; i++)
+        {
+            if (m_ProfilesListDownloaded[i] == false)
+                return;
+        }
+
+        m_IsProfilesDownloadProgressCompleted = true;
     }
     #endregion
 }
