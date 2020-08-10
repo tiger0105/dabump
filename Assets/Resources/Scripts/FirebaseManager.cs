@@ -53,17 +53,23 @@ public class FirebaseManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    private void Start()
+    private async void Start()
     {
+        m_CourtList = new List<Court>();
+        m_PlayerCardList = new List<PlayerCard>();
+
+        m_CourtsListDownloaded = new List<bool>();
+        m_ProfilesListDownloaded = new List<bool>();
+
 #if UNITY_EDITOR
-        _ = InitializeFirebaseAsync();
+        await InitializeFirebaseAsync();
 #else
-        FirebaseApp.CheckAndFixDependenciesAsync().ContinueWith(task =>
+        await FirebaseApp.CheckAndFixDependenciesAsync().ContinueWith(async task =>
         {
             dependencyStatus = task.Result;
             if (dependencyStatus == DependencyStatus.Available)
             {
-                _ = InitializeFirebaseAsync();
+                await InitializeFirebaseAsync();
             }
             else
             {
@@ -71,16 +77,11 @@ public class FirebaseManager : MonoBehaviour
             }
         });
 #endif
-        m_CourtList = new List<Court>();
-        m_PlayerCardList = new List<PlayerCard>();
-
-        m_CourtsListDownloaded = new List<bool>();
-        m_ProfilesListDownloaded = new List<bool>();
     }
 
     private async Task InitializeFirebaseAsync()
     {
-        auth = FirebaseAuth.GetAuth(FirebaseApp.DefaultInstance);
+        auth = FirebaseAuth.DefaultInstance;
         auth.StateChanged += AuthStateChanged;
         AuthStateChanged(this, null);
 
@@ -93,8 +94,8 @@ public class FirebaseManager : MonoBehaviour
             FB.ActivateApp();
         }
 
-        firestore = FirebaseFirestore.GetInstance(FirebaseApp.DefaultInstance);
-        storage = FirebaseStorage.GetInstance(FirebaseApp.DefaultInstance);
+        firestore = FirebaseFirestore.DefaultInstance;
+        storage = FirebaseStorage.DefaultInstance;
 
         await FetchCourtsAsync();
         await FetchPlayersInfoAsync();
@@ -117,12 +118,8 @@ public class FirebaseManager : MonoBehaviour
 
     private void OnApplicationQuit()
     {
+        auth.Dispose();
         FirebaseApp.DefaultInstance.Dispose();
-        if (firestore != null)
-        {
-            firestore.TerminateAsync();
-            firestore.ClearPersistenceAsync();
-        }
     }
 
     #region Google SignIn
@@ -179,6 +176,8 @@ public class FirebaseManager : MonoBehaviour
                 PlayerPrefs.SetInt("IsLoggedIn", 1);
 
                 await Profile.Instance.GetProfileAsync(firestore);
+
+                PlayerInfo.Instance.BuildPlayerInfoList();
 
                 Main.Instance.SwitchToMainPanel();
                 return;
@@ -237,6 +236,8 @@ public class FirebaseManager : MonoBehaviour
             PlayerPrefs.SetInt("IsLoggedIn", 1);
 
             await Profile.Instance.GetProfileAsync(firestore);
+
+            PlayerInfo.Instance.BuildPlayerInfoList();
 
             Main.Instance.SwitchToMainPanel();
             return;
