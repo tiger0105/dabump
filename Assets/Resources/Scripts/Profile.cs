@@ -2,6 +2,7 @@
 using Firebase.Extensions;
 using Firebase.Firestore;
 using Michsky.UI.ModernUIPack;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using TMPro;
@@ -148,50 +149,57 @@ public class Profile : MonoBehaviour
 
         await documentReference.GetSnapshotAsync().ContinueWithOnMainThread(task =>
         {
-            if (task.IsCanceled)
+            try
             {
-                Debug.Log("documentReference.GetSnapshotAsync() was canceled.");
-                m_LoadingBar.SetActive(false);
-                return;
-            }
-            if (task.IsFaulted)
-            {
-                Debug.Log("documentReference.GetSnapshotAsync() encountered an error: " + task.Exception);
-                m_LoadingBar.SetActive(false);
-                return;
-            }
+                if (task.IsCanceled)
+                {
+                    Debug.Log("documentReference.GetSnapshotAsync() was canceled.");
+                    m_LoadingBar.SetActive(false);
+                    return;
+                }
+                if (task.IsFaulted)
+                {
+                    Debug.Log("documentReference.GetSnapshotAsync() encountered an error: " + task.Exception);
+                    m_LoadingBar.SetActive(false);
+                    return;
+                }
 
-            DocumentSnapshot documentSnapshot = task.Result;
+                DocumentSnapshot documentSnapshot = task.Result;
 
-            if (documentSnapshot.Exists)
-            {
-                Dictionary<string, object> profile = documentSnapshot.ToDictionary();
+                if (documentSnapshot.Exists)
+                {
+                    Dictionary<string, object> profile = documentSnapshot.ToDictionary();
 
-                string cardName = profile["Name"].ToString();
-                string teamPosition = profile["TeamPosition"].ToString();
-                string cardTopColor = profile["CardTopColor"].ToString();
-                string cardBottomColor = profile["CardBottomColor"].ToString();
-                _ = m_CardTopColor.color;
-                ColorUtility.TryParseHtmlString("#" + cardTopColor, out Color topColor);
-                m_CardTopColor.color = topColor;
-                m_TopColor.color = topColor;
-                _ = m_CardBottomColor.color;
-                ColorUtility.TryParseHtmlString("#" + cardBottomColor, out Color bottomColor);
-                m_CardBottomColor.color = bottomColor;
-                m_BottomColor.color = bottomColor;
-                int index = m_TeamPositionSelector.elements.IndexOf(teamPosition);
-                m_TeamPositionSelector.index = index;
-                m_TeamPositionSelector.defaultIndex = index;
-                m_TeamPositionSelector.SetValueAtIndex();
-                m_NameInputField.text = cardName;
-                m_CardName.text = cardName;
-                m_CardName.color = SetInvertedColor(m_CardTopColor.color);
-                m_CardPosition.text = m_TeamPositionSelector.elements[index];
-                m_CardPosition.color = SetInvertedColor(m_CardBottomColor.color);
-            }
-            else
+                    string cardName = profile["Name"].ToString();
+                    string teamPosition = profile["TeamPosition"].ToString();
+                    string cardTopColor = profile["CardTopColor"].ToString();
+                    string cardBottomColor = profile["CardBottomColor"].ToString();
+                    _ = m_CardTopColor.color;
+                    ColorUtility.TryParseHtmlString("#" + cardTopColor, out Color topColor);
+                    m_CardTopColor.color = topColor;
+                    m_TopColor.color = topColor;
+                    _ = m_CardBottomColor.color;
+                    ColorUtility.TryParseHtmlString("#" + cardBottomColor, out Color bottomColor);
+                    m_CardBottomColor.color = bottomColor;
+                    m_BottomColor.color = bottomColor;
+                    int index = m_TeamPositionSelector.elements.IndexOf(teamPosition);
+                    m_TeamPositionSelector.index = index;
+                    m_TeamPositionSelector.defaultIndex = index;
+                    m_TeamPositionSelector.SetValueAtIndex();
+                    m_NameInputField.text = cardName;
+                    m_CardName.text = cardName;
+                    m_CardName.color = SetInvertedColor(m_CardTopColor.color);
+                    m_CardPosition.text = m_TeamPositionSelector.elements[index];
+                    m_CardPosition.color = SetInvertedColor(m_CardBottomColor.color);
+                }
+                else
+                {
+                    Debug.Log(string.Format("Document {0} does not exist!", documentSnapshot.Id));
+                }
+            } 
+            catch (Exception e)
             {
-                Debug.Log(string.Format("Document {0} does not exist!", documentSnapshot.Id));
+                Debug.Log(e);
             }
         });
 
@@ -263,4 +271,6 @@ public class Profile : MonoBehaviour
             }
         }, "Select a PNG image", "image/png");
     }
+
+   
 }

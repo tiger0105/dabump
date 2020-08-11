@@ -12,6 +12,8 @@ public class Splash : MonoBehaviour
         && FirebaseManager.Instance.m_IsProfilesDownloadProgressCompleted == true);
         GameObject.Find("Canvas").GetComponent<Animator>().Play("Logo_FadeOut");
         yield return new WaitForSeconds(1.5f);
+        FirebaseManager.Instance.firestore.TerminateAsync();
+        FirebaseManager.Instance.firestore.ClearPersistenceAsync();
         SceneManager.LoadSceneAsync(1);
     }
 }

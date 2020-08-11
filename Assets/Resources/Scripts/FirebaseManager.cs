@@ -24,7 +24,7 @@ public class FirebaseManager : MonoBehaviour
 #endif
     private FirebaseAuth auth;
     private FirebaseUser user;
-    private FirebaseFirestore firestore;
+    public FirebaseFirestore firestore;
     private FirebaseStorage storage;
 
     [HideInInspector] public List<Court> m_CourtList;
@@ -113,12 +113,16 @@ public class FirebaseManager : MonoBehaviour
             auth.SignOut();
         }
         auth = null;
+        if (firestore != null)
+        {
+            firestore.TerminateAsync();
+            firestore.ClearPersistenceAsync();
+        }
         Instance = null;
     }
 
     private void OnApplicationQuit()
     {
-        auth.Dispose();
         FirebaseApp.DefaultInstance.Dispose();
     }
 
@@ -175,6 +179,8 @@ public class FirebaseManager : MonoBehaviour
                 PlayerPrefs.SetString("SocialPlatform", "Google");
                 PlayerPrefs.SetInt("IsLoggedIn", 1);
 
+                firestore = null;
+                firestore = FirebaseFirestore.GetInstance(FirebaseApp.Create());
                 await Profile.Instance.GetProfileAsync(firestore);
 
                 PlayerInfo.Instance.BuildPlayerInfoList();
@@ -186,7 +192,7 @@ public class FirebaseManager : MonoBehaviour
             Main.Instance.HideLoginLoadingBar();
         }
     }
-#endregion
+    #endregion
 
     #region Facebook SignIn
     public void OnFacebookSignIn()
@@ -235,6 +241,8 @@ public class FirebaseManager : MonoBehaviour
             PlayerPrefs.SetString("SocialPlatform", "Facebook");
             PlayerPrefs.SetInt("IsLoggedIn", 1);
 
+            firestore = null;
+            firestore = FirebaseFirestore.GetInstance(FirebaseApp.Create());
             await Profile.Instance.GetProfileAsync(firestore);
 
             PlayerInfo.Instance.BuildPlayerInfoList();
