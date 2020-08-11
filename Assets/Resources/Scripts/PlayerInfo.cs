@@ -26,7 +26,7 @@ public class PlayerInfo : MonoBehaviour
 
         int cardIndex = 0;
 
-        foreach (PlayerCard card in FirebaseManager.Instance.m_PlayerCardList)
+        foreach (PlayerProfile card in FirebaseManager.Instance.m_PlayerCardList)
         {
             AddPlayerCard(cardIndex, card);
             cardIndex++;
@@ -45,7 +45,7 @@ public class PlayerInfo : MonoBehaviour
         m_PlayerInfoListTransform.DetachChildren();
     }
 
-    private void AddPlayerCard(int cardIndex, PlayerCard playerCard)
+    private void AddPlayerCard(int cardIndex, PlayerProfile playerCard)
     {
         string userId = PlayerPrefs.GetString("UserID", string.Empty);
         if (userId == playerCard.UserID)
@@ -65,8 +65,8 @@ public class PlayerInfo : MonoBehaviour
         card.transform.GetChild(5).GetComponent<TextMeshProUGUI>().text = playerCard.Rank == 0 ? "" : "RANK " + playerCard.Rank;
         card.transform.GetChild(6).GetComponent<TextMeshProUGUI>().text = playerCard.TeamPosition;
         card.transform.GetChild(6).GetComponent<TextMeshProUGUI>().color = SetInvertedColor(bottomColor);
-        if (playerCard.ImagePath.Length > 0)
-            SetPlayerImage(cardIndex, playerCard.ImagePath);
+        if (playerCard.Image.Length > 0)
+            SetPlayerImage(cardIndex, playerCard.Image);
     }
 
     private Color SetInvertedColor(Color original)

@@ -28,7 +28,7 @@ public class FirebaseManager : MonoBehaviour
     public FirebaseStorage storage;
 
     [HideInInspector] public List<Court> m_CourtList;
-    [HideInInspector] public List<PlayerCard> m_PlayerCardList;
+    [HideInInspector] public List<PlayerProfile> m_PlayerCardList;
 
     [HideInInspector] public bool m_IsCourtsDownloadProgressCompleted = false;
     [HideInInspector] public bool m_IsProfilesDownloadProgressCompleted = false;
@@ -56,7 +56,7 @@ public class FirebaseManager : MonoBehaviour
     private async void Start()
     {
         m_CourtList = new List<Court>();
-        m_PlayerCardList = new List<PlayerCard>();
+        m_PlayerCardList = new List<PlayerProfile>();
 
         m_CourtsListDownloaded = new List<bool>();
         m_ProfilesListDownloaded = new List<bool>();
@@ -129,8 +129,6 @@ public class FirebaseManager : MonoBehaviour
     #region Google SignIn
     public void OnGoogleSignIn()
     {
-        PlayerInfo.Instance.BuildPlayerInfoList();
-
         Main.Instance.ShowLoginLoadingBar();
 
         GoogleSignIn.Configuration = configuration;
@@ -181,11 +179,9 @@ public class FirebaseManager : MonoBehaviour
                 PlayerPrefs.SetString("SocialPlatform", "Google");
                 PlayerPrefs.SetInt("IsLoggedIn", 1);
 
-                //firestore = null;
-                //firestore = FirebaseFirestore.GetInstance(FirebaseApp.Create());
-                //await Profile.Instance.GetProfileAsync(firestore);
+                StartCoroutine(Profile.Instance.GetProfileAsync());
 
-                //PlayerInfo.Instance.BuildPlayerInfoList();
+                PlayerInfo.Instance.BuildPlayerInfoList();
 
                 Main.Instance.SwitchToMainPanel();
                 return;
@@ -243,11 +239,9 @@ public class FirebaseManager : MonoBehaviour
             PlayerPrefs.SetString("SocialPlatform", "Facebook");
             PlayerPrefs.SetInt("IsLoggedIn", 1);
 
-            //firestore = null;
-            //firestore = FirebaseFirestore.GetInstance(FirebaseApp.Create());
-            //await Profile.Instance.GetProfileAsync(firestore);
+            StartCoroutine(Profile.Instance.GetProfileAsync());
 
-            //PlayerInfo.Instance.BuildPlayerInfoList();
+            PlayerInfo.Instance.BuildPlayerInfoList();
 
             Main.Instance.SwitchToMainPanel();
             return;
@@ -445,8 +439,8 @@ public class FirebaseManager : MonoBehaviour
                 int.TryParse(player["Badges"].ToString(), out int badges);
                 bool.TryParse(player["IsMVP"].ToString(), out bool isMVP);
 
-                m_PlayerCardList.Add(new PlayerCard(player["UserID"].ToString(), player["Name"].ToString(), imagePath, rank, badges, 
-                    isMVP, player["TeamPosition"].ToString(), player["CardTopColor"].ToString(), player["CardBottomColor"].ToString()));
+                m_PlayerCardList.Add(new PlayerProfile(player["UserID"].ToString(), player["Name"].ToString(), imagePath, rank, badges, 
+                    isMVP, null, player["TeamPosition"].ToString(), player["CardTopColor"].ToString(), player["CardBottomColor"].ToString()));
 
                 playerIndex++;
 

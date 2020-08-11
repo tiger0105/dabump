@@ -18,29 +18,37 @@ public class Court
 }
 
 [Serializable]
-public class PlayerCard
+public class PlayerProfile
 {
     public string UserID;
     public string Name;
-    public string ImagePath;
+    public string Image;
     public int Rank;
     public int Badges;
     public bool IsMVP;
+    public int[] Courts;
     public string TeamPosition;
     public string CardTopColor;
     public string CardBottomColor;
 
-    public PlayerCard(string userId = "", string name = "", string imagePath = "", int rank = 0, int badges = 0, 
-        bool isMVP = false, string teamPosition = "", string cardTopColor = "000000", string cardBottomColor = "000000")
+    public PlayerProfile(string userId = "", string name = "", string image = "", int rank = 0, int badges = 0,
+        bool isMVP = false, int[] courts = null, string teamPosition = "", string cardTopColor = "000000", string cardBottomColor = "000000")
     {
         UserID = userId;
         Name = name;
-        ImagePath = imagePath;
+        Image = image;
         Rank = rank;
         Badges = badges;
         IsMVP = isMVP;
+        Courts = courts;
         TeamPosition = teamPosition;
         CardTopColor = cardTopColor;
         CardBottomColor = cardBottomColor;
     }
+}
+
+public static class AppData
+{
+    public static string _REST_API_ENDPOINT = "https://us-central1-dabump-8c59c.cloudfunctions.net";
+    public static string _REST_API_GET_MY_PROFILE = "/getMyProfile";
 }

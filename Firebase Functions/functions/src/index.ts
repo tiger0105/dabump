@@ -26,3 +26,10 @@ export const fetchProfiles = functions.https.onRequest(async (request, response)
     });
     response.send(data);
 });
+
+export const getMyProfile = functions.https.onRequest(async (request, response) => {
+    const userId = request.body.userId;
+    const profileReference = firestore.collection('Profiles').doc(userId);
+    const doc = await profileReference.get();
+    response.send(doc.data());
+});

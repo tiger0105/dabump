@@ -3,10 +3,12 @@ using Firebase.Extensions;
 using Firebase.Firestore;
 using Michsky.UI.ModernUIPack;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.UI;
 
 public class Profile : MonoBehaviour
@@ -134,7 +136,7 @@ public class Profile : MonoBehaviour
         m_LoadingBar.SetActive(false);
     }
 
-    public async Task GetProfileAsync(FirebaseFirestore firestore)
+    public IEnumerator GetProfileAsync()
     {
         m_LoadingBar.SetActive(true);
 
@@ -142,66 +144,40 @@ public class Profile : MonoBehaviour
         if (userId == string.Empty)
         {
             m_LoadingBar.SetActive(false);
-            return;
+            yield break;
         }
 
-        DocumentReference documentReference = firestore.Collection("Profiles").Document(userId);
+        WWWForm form = new WWWForm();
+        form.AddField("userId", userId);
 
-        await documentReference.GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        using (UnityWebRequest www = UnityWebRequest.Post(AppData._REST_API_ENDPOINT + AppData._REST_API_GET_MY_PROFILE, form))
         {
-            try
+            yield return www.SendWebRequest();
+
+            if (www.isNetworkError || www.isHttpError)
             {
-                if (task.IsCanceled)
-                {
-                    Debug.Log("documentReference.GetSnapshotAsync() was canceled.");
-                    m_LoadingBar.SetActive(false);
-                    return;
-                }
-                if (task.IsFaulted)
-                {
-                    Debug.Log("documentReference.GetSnapshotAsync() encountered an error: " + task.Exception);
-                    m_LoadingBar.SetActive(false);
-                    return;
-                }
-
-                DocumentSnapshot documentSnapshot = task.Result;
-
-                if (documentSnapshot.Exists)
-                {
-                    Dictionary<string, object> profile = documentSnapshot.ToDictionary();
-
-                    string cardName = profile["Name"].ToString();
-                    string teamPosition = profile["TeamPosition"].ToString();
-                    string cardTopColor = profile["CardTopColor"].ToString();
-                    string cardBottomColor = profile["CardBottomColor"].ToString();
-                    _ = m_CardTopColor.color;
-                    ColorUtility.TryParseHtmlString("#" + cardTopColor, out Color topColor);
-                    m_CardTopColor.color = topColor;
-                    m_TopColor.color = topColor;
-                    _ = m_CardBottomColor.color;
-                    ColorUtility.TryParseHtmlString("#" + cardBottomColor, out Color bottomColor);
-                    m_CardBottomColor.color = bottomColor;
-                    m_BottomColor.color = bottomColor;
-                    int index = m_TeamPositionSelector.elements.IndexOf(teamPosition);
-                    m_TeamPositionSelector.index = index;
-                    m_TeamPositionSelector.defaultIndex = index;
-                    m_TeamPositionSelector.SetValueAtIndex();
-                    m_NameInputField.text = cardName;
-                    m_CardName.text = cardName;
-                    m_CardName.color = SetInvertedColor(m_CardTopColor.color);
-                    m_CardPosition.text = m_TeamPositionSelector.elements[index];
-                    m_CardPosition.color = SetInvertedColor(m_CardBottomColor.color);
-                }
-                else
-                {
-                    Debug.Log(string.Format("Document {0} does not exist!", documentSnapshot.Id));
-                }
-            } 
-            catch (Exception e)
-            {
-                Debug.Log(e);
+                m_LoadingBar.SetActive(false);
+                yield break;
             }
-        });
+
+            PlayerProfile playerProfile = JsonUtility.FromJson<PlayerProfile>(www.downloadHandler.text);
+
+            ColorUtility.TryParseHtmlString("#" + playerProfile.CardTopColor, out Color topColor);
+            m_CardTopColor.color = topColor;
+            m_TopColor.color = topColor;
+            ColorUtility.TryParseHtmlString("#" + playerProfile.CardBottomColor, out Color bottomColor);
+            m_CardBottomColor.color = bottomColor;
+            m_BottomColor.color = bottomColor;
+            int index = m_TeamPositionSelector.elements.IndexOf(playerProfile.TeamPosition);
+            m_TeamPositionSelector.index = index;
+            m_TeamPositionSelector.defaultIndex = index;
+            m_TeamPositionSelector.SetValueAtIndex();
+            m_NameInputField.text = playerProfile.Name;
+            m_CardName.text = playerProfile.Name;
+            m_CardName.color = SetInvertedColor(m_CardTopColor.color);
+            m_CardPosition.text = m_TeamPositionSelector.elements[index];
+            m_CardPosition.color = SetInvertedColor(m_CardBottomColor.color);
+        }
 
         m_Connected.text = PlayerPrefs.GetInt("IsLoggedIn", 0) == 0 ? string.Empty : "Connected";
         m_SocialIcon.sprite = PlayerPrefs.GetString("SocialPlatform", "Google") == "Google" ? m_SocialIcons[0] : m_SocialIcons[1];
