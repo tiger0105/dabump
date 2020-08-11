@@ -25,7 +25,7 @@ public class FirebaseManager : MonoBehaviour
     private FirebaseAuth auth;
     private FirebaseUser user;
     public FirebaseFirestore firestore;
-    private FirebaseStorage storage;
+    public FirebaseStorage storage;
 
     [HideInInspector] public List<Court> m_CourtList;
     [HideInInspector] public List<PlayerCard> m_PlayerCardList;
@@ -129,6 +129,8 @@ public class FirebaseManager : MonoBehaviour
     #region Google SignIn
     public void OnGoogleSignIn()
     {
+        PlayerInfo.Instance.BuildPlayerInfoList();
+
         Main.Instance.ShowLoginLoadingBar();
 
         GoogleSignIn.Configuration = configuration;
@@ -140,7 +142,7 @@ public class FirebaseManager : MonoBehaviour
         GoogleSignIn.DefaultInstance.SignIn().ContinueWith(OnGoogleAuthenticationFinished);
     }
 
-    private async Task OnGoogleAuthenticationFinished(Task<GoogleSignInUser> task)
+    private void OnGoogleAuthenticationFinished(Task<GoogleSignInUser> task)
     {
         if (task.IsFaulted)
         {
@@ -155,7 +157,7 @@ public class FirebaseManager : MonoBehaviour
         else
         {
             Credential credential = GoogleAuthProvider.GetCredential(task.Result.IdToken, null);
-            await auth.SignInWithCredentialAsync(credential).ContinueWith(async t =>
+            auth.SignInWithCredentialAsync(credential).ContinueWith(t =>
             {
                 if (t.IsCanceled)
                 {
@@ -179,11 +181,11 @@ public class FirebaseManager : MonoBehaviour
                 PlayerPrefs.SetString("SocialPlatform", "Google");
                 PlayerPrefs.SetInt("IsLoggedIn", 1);
 
-                firestore = null;
-                firestore = FirebaseFirestore.GetInstance(FirebaseApp.Create());
-                await Profile.Instance.GetProfileAsync(firestore);
+                //firestore = null;
+                //firestore = FirebaseFirestore.GetInstance(FirebaseApp.Create());
+                //await Profile.Instance.GetProfileAsync(firestore);
 
-                PlayerInfo.Instance.BuildPlayerInfoList();
+                //PlayerInfo.Instance.BuildPlayerInfoList();
 
                 Main.Instance.SwitchToMainPanel();
                 return;
@@ -241,11 +243,11 @@ public class FirebaseManager : MonoBehaviour
             PlayerPrefs.SetString("SocialPlatform", "Facebook");
             PlayerPrefs.SetInt("IsLoggedIn", 1);
 
-            firestore = null;
-            firestore = FirebaseFirestore.GetInstance(FirebaseApp.Create());
-            await Profile.Instance.GetProfileAsync(firestore);
+            //firestore = null;
+            //firestore = FirebaseFirestore.GetInstance(FirebaseApp.Create());
+            //await Profile.Instance.GetProfileAsync(firestore);
 
-            PlayerInfo.Instance.BuildPlayerInfoList();
+            //PlayerInfo.Instance.BuildPlayerInfoList();
 
             Main.Instance.SwitchToMainPanel();
             return;
@@ -407,6 +409,8 @@ public class FirebaseManager : MonoBehaviour
 
             QuerySnapshot allPlayersSnapshot = task.Result;
 
+            m_ProfilesListCount = allPlayersSnapshot.Documents.Count();
+
             int playerIndex = 0;
 
             foreach (DocumentSnapshot documentSnapshot in allPlayersSnapshot.Documents)
@@ -431,6 +435,10 @@ public class FirebaseManager : MonoBehaviour
                     {
                         m_ProfilesListDownloaded.Add(true);
                     }
+                }
+                else
+                {
+                    m_ProfilesListDownloaded.Add(true);
                 }
 
                 int.TryParse(player["Rank"].ToString(), out int rank);
