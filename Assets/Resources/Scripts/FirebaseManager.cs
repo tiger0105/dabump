@@ -180,6 +180,8 @@ public class FirebaseManager : MonoBehaviour
                 PlayerPrefs.SetInt("IsLoggedIn", 1);
 
                 StartCoroutine(Profile.Instance.GetProfileAsync());
+
+                Main.Instance.HideLoginLoadingBar();
             });
 
             Main.Instance.HideLoginLoadingBar();
@@ -395,6 +397,12 @@ public class FirebaseManager : MonoBehaviour
 
             m_ProfilesListCount = allPlayersSnapshot.Documents.Count();
 
+            if (m_ProfilesListCount == 0)
+            {
+                m_IsProfilesDownloadProgressCompleted = true;
+                return;
+            }
+
             int playerIndex = 0;
 
             foreach (DocumentSnapshot documentSnapshot in allPlayersSnapshot.Documents)
@@ -469,4 +477,14 @@ public class FirebaseManager : MonoBehaviour
         m_IsProfilesDownloadProgressCompleted = true;
     }
     #endregion
+
+    public void SaveProfile()
+    {
+        _ = Profile.Instance.SaveProfileAsync(user, firestore);
+    }
+
+    public void DeleteAccount()
+    {
+        _ = Profile.Instance.DeleteAccountAsync(user, auth, firestore);
+    }
 }

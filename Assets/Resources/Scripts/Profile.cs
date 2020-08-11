@@ -45,28 +45,42 @@ public class Profile : MonoBehaviour
         Instance = this;
     }
 
-    private async Task DeleteAccountAsync(FirebaseUser user, FirebaseAuth auth)
+    public async Task DeleteAccountAsync(FirebaseUser user, FirebaseAuth auth, FirebaseFirestore firestore)
     {
         if (user != null)
         {
-            await user.DeleteAsync().ContinueWith(task =>
+            string userId = PlayerPrefs.GetString("UserID", string.Empty);
+            if (userId == string.Empty)
             {
-                if (task.IsCanceled)
-                {
-                    Debug.Log("DeleteAsync was canceled.");
-                    return;
-                }
+                return;
+            }
 
-                if (task.IsFaulted)
-                {
-                    Debug.Log("DeleteAsync encountered an error: " + task.Exception);
-                    return;
-                }
+            DocumentReference documentReference = firestore.Collection("Profiles").Document(userId);
 
-                if (auth != null)
+            await documentReference.DeleteAsync().ContinueWithOnMainThread(async t =>
+            {
+                if (t.IsCompleted)
                 {
-                    auth.SignOut();
-                    Main.Instance.SwitchToLoginPanel();
+                    await user.DeleteAsync().ContinueWith(task =>
+                    {
+                        if (task.IsCanceled)
+                        {
+                            Debug.Log("DeleteAsync was canceled.");
+                            return;
+                        }
+
+                        if (task.IsFaulted)
+                        {
+                            Debug.Log("DeleteAsync encountered an error: " + task.Exception);
+                            return;
+                        }
+
+                        if (auth != null)
+                        {
+                            auth.SignOut();
+                            Main.Instance.SwitchToLoginPanel();
+                        }
+                    });
                 }
             });
         }
@@ -101,7 +115,17 @@ public class Profile : MonoBehaviour
         }
     }
 
-    public async Task SaveProfile(FirebaseUser user, FirebaseFirestore firestore)
+    public void SaveProfile()
+    {
+        FirebaseManager.Instance.SaveProfile();
+    }
+
+    public void DeleteAccount()
+    {
+        FirebaseManager.Instance.DeleteAccount();
+    }
+
+    public async Task SaveProfileAsync(FirebaseUser user, FirebaseFirestore firestore)
     {
         m_LoadingBar.SetActive(true);
 
@@ -138,7 +162,10 @@ public class Profile : MonoBehaviour
 
     public IEnumerator GetProfileAsync()
     {
+        m_LoadingBar.SetActive(true);
+
         string userId = PlayerPrefs.GetString("UserID", string.Empty);
+        string userName = PlayerPrefs.GetString("UserName", string.Empty);
         if (userId == string.Empty)
         {
             m_LoadingBar.SetActive(false);
@@ -147,6 +174,7 @@ public class Profile : MonoBehaviour
 
         WWWForm form = new WWWForm();
         form.AddField("userId", userId);
+        form.AddField("userName", userName);
 
         using (UnityWebRequest www = UnityWebRequest.Post(AppData._REST_API_ENDPOINT + AppData._REST_API_GET_MY_PROFILE, form))
         {
@@ -158,6 +186,8 @@ public class Profile : MonoBehaviour
                 yield break;
             }
 
+            Debug.Log(www.downloadHandler.text);
+
             PlayerProfile playerProfile = JsonUtility.FromJson<PlayerProfile>(www.downloadHandler.text);
 
             ColorUtility.TryParseHtmlString("#" + playerProfile.CardTopColor, out Color topColor);
@@ -166,7 +196,7 @@ public class Profile : MonoBehaviour
             ColorUtility.TryParseHtmlString("#" + playerProfile.CardBottomColor, out Color bottomColor);
             m_CardBottomColor.color = bottomColor;
             m_BottomColor.color = bottomColor;
-            int index = m_TeamPositionSelector.elements.IndexOf(playerProfile.TeamPosition);
+            int index = m_TeamPositionSelector.elements.IndexOf(playerProfile.TeamPosition.ToUpper());
             m_TeamPositionSelector.index = index;
             m_TeamPositionSelector.defaultIndex = index;
             m_TeamPositionSelector.SetValueAtIndex();
@@ -182,6 +212,8 @@ public class Profile : MonoBehaviour
         m_SocialLoginEmail.text = PlayerPrefs.GetString("UserEmail", string.Empty);
         if (m_SocialLoginEmail.text == string.Empty)
             m_SocialLoginEmail.text = "Email is not set as public. Please sign in again.";
+
+        m_LoadingBar.SetActive(false);
 
         PlayerInfo.Instance.BuildPlayerInfoList();
         Main.Instance.SwitchToMainPanel();

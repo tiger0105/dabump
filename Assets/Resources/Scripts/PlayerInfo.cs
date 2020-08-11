@@ -3,6 +3,7 @@ using System.IO;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.UI.ProceduralImage;
 
 public class PlayerInfo : MonoBehaviour
 {
@@ -57,9 +58,9 @@ public class PlayerInfo : MonoBehaviour
         card.transform.SetParent(m_PlayerInfoListTransform, false);
         card.name = playerCard.Name;
         ColorUtility.TryParseHtmlString("#" + playerCard.CardTopColor, out Color topColor);
-        card.transform.GetChild(1).GetChild(0).GetComponent<Image>().color = topColor;
+        card.transform.GetChild(1).GetChild(0).GetComponent<ProceduralImage>().color = topColor;
         ColorUtility.TryParseHtmlString("#" + playerCard.CardBottomColor, out Color bottomColor);
-        card.transform.GetChild(1).GetChild(1).GetComponent<Image>().color = bottomColor;
+        card.transform.GetChild(1).GetChild(1).GetComponent<ProceduralImage>().color = bottomColor;
         card.transform.GetChild(4).GetComponent<TextMeshProUGUI>().text = playerCard.Name;
         card.transform.GetChild(4).GetComponent<TextMeshProUGUI>().color = SetInvertedColor(topColor);
         card.transform.GetChild(5).GetComponent<TextMeshProUGUI>().text = playerCard.Rank == 0 ? "" : "RANK " + playerCard.Rank;
