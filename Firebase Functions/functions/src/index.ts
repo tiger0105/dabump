@@ -1,10 +1,11 @@
 import * as functions from 'firebase-functions';
 import admin = require('firebase-admin');
+import { Storage } from '@google-cloud/storage';
 
 admin.initializeApp();
 
 const firestore = admin.firestore();
-const storage = admin.storage();
+const storage = new Storage({ keyFilename: './dabump-8c59c-9df21d74d9c5.json' });
 
 export const fetchCourts = functions.https.onRequest(async (request, response) => {
     const courtsReference = firestore.collection('Courts');
