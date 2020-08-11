@@ -180,11 +180,6 @@ public class FirebaseManager : MonoBehaviour
                 PlayerPrefs.SetInt("IsLoggedIn", 1);
 
                 StartCoroutine(Profile.Instance.GetProfileAsync());
-
-                PlayerInfo.Instance.BuildPlayerInfoList();
-
-                Main.Instance.SwitchToMainPanel();
-                return;
             });
 
             Main.Instance.HideLoginLoadingBar();
@@ -216,7 +211,7 @@ public class FirebaseManager : MonoBehaviour
     {
         Credential credential = FacebookAuthProvider.GetCredential(accessToken);
 
-        await auth.SignInWithCredentialAsync(credential).ContinueWith(async task =>
+        await auth.SignInWithCredentialAsync(credential).ContinueWith(task =>
         {
             if (task.IsCanceled)
             {
@@ -240,11 +235,6 @@ public class FirebaseManager : MonoBehaviour
             PlayerPrefs.SetInt("IsLoggedIn", 1);
 
             StartCoroutine(Profile.Instance.GetProfileAsync());
-
-            PlayerInfo.Instance.BuildPlayerInfoList();
-
-            Main.Instance.SwitchToMainPanel();
-            return;
         });
 
         Main.Instance.HideLoginLoadingBar();

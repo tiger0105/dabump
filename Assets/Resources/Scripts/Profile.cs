@@ -138,8 +138,6 @@ public class Profile : MonoBehaviour
 
     public IEnumerator GetProfileAsync()
     {
-        m_LoadingBar.SetActive(true);
-
         string userId = PlayerPrefs.GetString("UserID", string.Empty);
         if (userId == string.Empty)
         {
@@ -185,7 +183,8 @@ public class Profile : MonoBehaviour
         if (m_SocialLoginEmail.text == string.Empty)
             m_SocialLoginEmail.text = "Email is not set as public. Please sign in again.";
 
-        m_LoadingBar.SetActive(false);
+        PlayerInfo.Instance.BuildPlayerInfoList();
+        Main.Instance.SwitchToMainPanel();
     }
 
     public Color SetInvertedColor(Color original)
