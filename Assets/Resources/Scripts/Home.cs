@@ -1,5 +1,4 @@
-﻿using DigitalRubyShared;
-using Michsky.UI.Frost;
+﻿using Michsky.UI.Frost;
 using System.Collections;
 using System.IO;
 using System.Linq;
