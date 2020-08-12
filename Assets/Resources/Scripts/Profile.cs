@@ -2,7 +2,6 @@
 using Firebase.Extensions;
 using Firebase.Firestore;
 using Michsky.UI.ModernUIPack;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -39,6 +38,24 @@ public class Profile : MonoBehaviour
     [SerializeField] private Button m_DeleteAccountButton;
 
     [SerializeField] private Sprite[] m_SocialIcons;
+
+    [Header("Help Tab")]
+    [SerializeField] private TMP_InputField m_HelpForm_NameInputField;
+    [SerializeField] private TMP_InputField m_HelpForm_EmailInputField;
+    [SerializeField] private TMP_InputField m_HelpForm_QuestionInputField;
+
+    [SerializeField] private TextMeshProUGUI m_HelpForm_StatusText;
+    [SerializeField] private Button m_HelpForm_SubmitButton;
+    [SerializeField] private GameObject m_HelpForm_LoadingBar;
+
+    [Header("Right Panel")]
+    [SerializeField] private RawImage m_RightPanel_Photo;
+    [SerializeField] private TextMeshProUGUI m_RightPanel_Name;
+    [SerializeField] private TextMeshProUGUI m_RightPanel_TeamPosition;
+    [SerializeField] private TextMeshProUGUI m_RightPanel_Badge;
+    [SerializeField] private TextMeshProUGUI m_RightPanel_Rank;
+    [SerializeField] private GameObject m_RightPanel_IsMVP;
+
 
     private void Awake()
     {
@@ -205,6 +222,16 @@ public class Profile : MonoBehaviour
             m_CardName.color = SetInvertedColor(m_CardTopColor.color);
             m_CardPosition.text = m_TeamPositionSelector.elements[index];
             m_CardPosition.color = SetInvertedColor(m_CardBottomColor.color);
+
+            //m_CardPhoto 
+
+            //m_RightPanel_Photo
+
+            m_RightPanel_Name.text = playerProfile.Name;
+            m_RightPanel_TeamPosition.text = playerProfile.TeamPosition.ToUpper();
+            m_RightPanel_Rank.text = playerProfile.Rank == 0 ? "Rank Not Available" : ("Rank " + playerProfile.Rank);
+            m_RightPanel_Badge.text = playerProfile.Badges == 0 ? "Not Available" : playerProfile.Badges.ToString();
+            m_RightPanel_IsMVP.SetActive(playerProfile.IsMVP);
         }
 
         m_Connected.text = PlayerPrefs.GetInt("IsLoggedIn", 0) == 0 ? string.Empty : "Connected";
@@ -279,5 +306,39 @@ public class Profile : MonoBehaviour
         }, "Select a PNG image", "image/png");
     }
 
-   
+    public void SubmitHelpForm()
+    {
+        StartCoroutine(SubmitHelpFormAsync());
+    }
+
+    private IEnumerator SubmitHelpFormAsync()
+    {
+        m_HelpForm_LoadingBar.SetActive(true);
+        m_HelpForm_SubmitButton.enabled = false;
+
+        m_HelpForm_StatusText.text = "Submitting...";
+
+        WWWForm form = new WWWForm();
+        form.AddField("name", m_HelpForm_NameInputField.text);
+        form.AddField("email", m_HelpForm_EmailInputField.text);
+        form.AddField("question", m_HelpForm_QuestionInputField.text);
+
+        using (UnityWebRequest www = UnityWebRequest.Post(AppData._REST_API_ENDPOINT + AppData._REST_API_SUBMIT_HELP_FORM, form))
+        {
+            yield return www.SendWebRequest();
+
+            if (www.responseCode != 200 || www.downloadHandler.text != "200")
+            {
+                m_HelpForm_StatusText.text = "Failed to submit the help form. Please try again later.";
+                m_HelpForm_LoadingBar.SetActive(false);
+                m_HelpForm_SubmitButton.enabled = true;
+                yield break;
+            }
+
+            m_HelpForm_StatusText.text = "Help form submitted successfully.";
+        }
+
+        m_HelpForm_LoadingBar.SetActive(false);
+        m_HelpForm_SubmitButton.enabled = true;
+    }
 }

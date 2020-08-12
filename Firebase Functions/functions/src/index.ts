@@ -1,5 +1,14 @@
 import * as functions from 'firebase-functions';
 import admin = require('firebase-admin');
+import nodemailer = require('nodemailer');
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'dabumpdc@gmail.com',
+    pass: 'Basketball5'
+  }
+});
 
 admin.initializeApp();
 
@@ -49,4 +58,25 @@ export const getMyProfile = functions.https.onRequest(async (request, response) 
             response.send(data);
     } else
         response.send(doc.data());
+});
+
+export const submitHelpForm = functions.https.onRequest(async (request, response) => {
+    const name = request.body.name;
+    const email = request.body.email;
+    const question = request.body.question;
+    
+    const mailOptions = {
+        from: email,
+        to: 'wheresthebump@gmail.com',
+        subject: 'Dabump Questions | Concerns - From ' + name,
+        text: question
+    };
+      
+    transporter.sendMail(mailOptions, function(error: any, info: { response: string; }) {
+        if (error) {
+            response.send(error);
+        } else {
+            response.send('200');
+        }
+    });
 });

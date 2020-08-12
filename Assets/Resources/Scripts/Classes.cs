@@ -51,4 +51,5 @@ public static class AppData
 {
     public static string _REST_API_ENDPOINT = "https://us-central1-dabump-8c59c.cloudfunctions.net";
     public static string _REST_API_GET_MY_PROFILE = "/getMyProfile";
+    public static string _REST_API_SUBMIT_HELP_FORM = "/submitHelpForm";
 }
