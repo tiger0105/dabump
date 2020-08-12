@@ -490,4 +490,22 @@ public class FirebaseManager : MonoBehaviour
     {
         _ = Profile.Instance.DeleteAccountAsync(user, auth, firestore);
     }
+
+    public async Task UploadProfilePhotoAsync(string bucketUrl, string fileName)
+    {
+        StorageReference imageReference = storage.GetReference(bucketUrl);
+        await imageReference.PutFileAsync(fileName).ContinueWith((Task<StorageMetadata> task) =>
+        {
+            if (task.IsFaulted || task.IsCanceled)
+            {
+                Debug.Log(task.Exception.ToString());
+            }
+            else
+            {
+                StorageMetadata metadata = task.Result;
+                string download_url = metadata.Path;
+                Debug.Log("download url = " + download_url);
+            }
+        });
+    }
 }

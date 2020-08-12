@@ -5,6 +5,7 @@ using ImageAndVideoPicker;
 using Michsky.UI.ModernUIPack;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using TMPro;
@@ -159,16 +160,26 @@ public class Profile : MonoBehaviour
 
         await UpdateDisplayName(user, m_NameInputField.text);
 
+        bool isImageUploaded = false;
+
+        if (m_TemporaryPhotoPath.Length > 0 && File.Exists(m_TemporaryPhotoPath))
+        {
+            await FirebaseManager.Instance.UploadProfilePhotoAsync(m_TemporaryPhotoPath, "Profiles/" + userId + ".jpg");
+            isImageUploaded = true;
+        }
+
         DocumentReference documentReference = firestore.Collection("Profiles").Document(userId);
         Dictionary<string, object> profile = new Dictionary<string, object>
         {
             ["UserID"] = userId,
             ["Name"] = m_NameInputField.text,
-            ["Image"] = "",
             ["TeamPosition"] = m_CardPosition.text,
             ["CardTopColor"] = ColorUtility.ToHtmlStringRGB(m_CardTopColor.color),
             ["CardBottomColor"] = ColorUtility.ToHtmlStringRGB(m_CardBottomColor.color),
         };
+
+        if (isImageUploaded == true)
+            profile.Add("Image", "Profiles/" + userId + ".jpg");
 
         await documentReference.SetAsync(profile).ContinueWithOnMainThread(task =>
         {
