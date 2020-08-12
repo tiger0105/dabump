@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.UI.Extensions;
 
 public class Courts : MonoBehaviour
 {
@@ -103,6 +104,7 @@ public class Courts : MonoBehaviour
         yield return new WaitForEndOfFrame();
         m_CourtScrollRect.horizontalNormalizedPosition = 0;
         LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)m_CourtScrollRect.transform);
+        m_CourtScrollRect.GetComponent<UI_ScrollRectOcclusion>().Init();
     }
 
     private async Task SetCheckInCourt(FirebaseFirestore firestore)
