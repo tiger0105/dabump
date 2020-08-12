@@ -49,6 +49,7 @@ export const getMyProfile = functions.https.onRequest(async (request, response) 
             Rank: 0,
             Badges: 0,
             IsMVP: false,
+            ActiveCourt: 0,
             TeamPosition: 'CENTER',
             CardTopColor: '000000',
             CardBottomColor: '000000',

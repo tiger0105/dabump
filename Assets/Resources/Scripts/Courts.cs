@@ -3,6 +3,7 @@ using Firebase.Firestore;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
@@ -59,6 +60,13 @@ public class Courts : MonoBehaviour
         card.name = name;
         card.transform.GetChild(1).GetChild(1).GetComponent<TextMeshProUGUI>().text = name;
         card.transform.GetChild(1).GetChild(2).GetComponent<TextMeshProUGUI>().text = address;
+        //string playersList = string.Empty;
+        //if (checkedInPlayers == null)
+        //    playersList = "No players available";
+        //else
+        //    playersList = checkedInPlayers.Aggregate((a, x) => a + ", " + x).ToString();
+        //card.transform.GetChild(1).GetChild(3).GetComponent<TextMeshProUGUI>().text = playersList;
+
         SetCourtImage(id, imagePath);
     }
 

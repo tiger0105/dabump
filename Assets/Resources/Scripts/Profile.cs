@@ -1,6 +1,7 @@
 ﻿using Firebase.Auth;
 using Firebase.Extensions;
 using Firebase.Firestore;
+using ImageAndVideoPicker;
 using Michsky.UI.ModernUIPack;
 using System.Collections;
 using System.Collections.Generic;
@@ -28,6 +29,8 @@ public class Profile : MonoBehaviour
     [SerializeField] public Image m_CardBottomColor;
     [SerializeField] public Button m_UploadCardPhotoButton;
     [SerializeField] public RawImage m_CardPhoto;
+
+    private string m_TemporaryPhotoPath;
 
     [SerializeField] public Button m_SaveButton;
     [SerializeField] private GameObject m_LoadingBar;
@@ -162,9 +165,6 @@ public class Profile : MonoBehaviour
             ["UserID"] = userId,
             ["Name"] = m_NameInputField.text,
             ["Image"] = "",
-            ["Rank"] = 0,
-            ["Badges"] = 0,
-            ["IsMVP"] = false,
             ["TeamPosition"] = m_CardPosition.text,
             ["CardTopColor"] = ColorUtility.ToHtmlStringRGB(m_CardTopColor.color),
             ["CardBottomColor"] = ColorUtility.ToHtmlStringRGB(m_CardBottomColor.color),
@@ -222,7 +222,7 @@ public class Profile : MonoBehaviour
             m_NameInputField.text = playerProfile.Name;
             m_CardName.text = playerProfile.Name;
             m_CardName.color = SetInvertedColor(m_CardTopColor.color);
-            m_CardRank.text = playerProfile.Rank == 0 ? "Rank Not Available" : ("Rank " + playerProfile.Rank);
+            m_CardRank.text = playerProfile.Rank == 0 ? "Rank NA" : ("Rank " + playerProfile.Rank);
             m_CardPosition.text = m_TeamPositionSelector.elements[index];
             m_CardPosition.color = SetInvertedColor(m_CardBottomColor.color);
 
@@ -282,31 +282,58 @@ public class Profile : MonoBehaviour
         m_CardPosition.color = SetInvertedColor(m_CardBottomColor.color);
     }
 
-    public void OnAvatarUploadButtonClicked()
+    public void SelectAvatarPhoto()
     {
-        if (NativeGallery.IsMediaPickerBusy())
-            return;
-
-        PickImage();
+#if UNITY_ANDROID
+        AndroidPicker.BrowseImage(true);
+#elif UNITY_IPHONE
+		IOSPicker.BrowseImage(true);
+#endif
     }
 
-    private void PickImage()
+    private void OnEnable()
     {
-        NativeGallery.Permission permission = NativeGallery.GetImageFromGallery((path) =>
-        {
-            if (path != null)
-            {
-                Texture2D texture = NativeGallery.LoadImageAtPath(path);
-                if (texture == null)
-                {
-                    return;
-                }
+        PickerEventListener.onImageSelect += OnImageSelect;
+        PickerEventListener.onImageLoad += OnImageLoad;
+        PickerEventListener.onError += OnError;
+        PickerEventListener.onCancel += OnCancel;
 
-                m_CardPhoto.texture = texture;
+#if UNITY_ANDROID
+        AndroidPicker.CheckPermissions();
+#endif
+    }
 
-                Destroy(texture, 5f);
-            }
-        }, "Select a PNG image", "image/png");
+    private void OnDisable()
+    {
+        PickerEventListener.onImageSelect -= OnImageSelect;
+        PickerEventListener.onImageLoad -= OnImageLoad;
+        PickerEventListener.onError -= OnError;
+        PickerEventListener.onCancel -= OnCancel;
+    }
+
+    private void OnImageSelect(string imgPath, ImageOrientation imgOrientation)
+    {
+        Debug.Log("Image Location : " + imgPath);
+    }
+
+    private void OnImageLoad(string imgPath, Texture2D tex, ImageOrientation imgOrientation)
+    {
+        Debug.Log("Image Location : " + imgPath);
+        m_TemporaryPhotoPath = imgPath;
+        m_CardPhoto.texture = tex;
+        m_UploadCardPhotoButton.transform.GetChild(0).gameObject.SetActive(false);
+    }
+
+    private void OnError(string errorMsg)
+    {
+        Debug.Log("Error : " + errorMsg);
+        m_TemporaryPhotoPath = "";
+    }
+
+    private void OnCancel()
+    {
+        Debug.Log("Cancel by user");
+        m_TemporaryPhotoPath = ""; 
     }
 
     public void SubmitHelpForm()

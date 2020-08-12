@@ -437,10 +437,11 @@ public class FirebaseManager : MonoBehaviour
 
                 int.TryParse(player["Rank"].ToString(), out int rank);
                 int.TryParse(player["Badges"].ToString(), out int badges);
+                int.TryParse(player["ActiveCourt"].ToString(), out int activeCourt);
                 bool.TryParse(player["IsMVP"].ToString(), out bool isMVP);
 
                 m_PlayerCardList.Add(new PlayerProfile(player["UserID"].ToString(), player["Name"].ToString(), imagePath, rank, badges, 
-                    isMVP, null, player["TeamPosition"].ToString(), player["CardTopColor"].ToString(), player["CardBottomColor"].ToString()));
+                    isMVP, activeCourt, player["TeamPosition"].ToString(), player["CardTopColor"].ToString(), player["CardBottomColor"].ToString()));
 
                 playerIndex++;
 
