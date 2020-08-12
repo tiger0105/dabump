@@ -129,6 +129,8 @@ public class FirebaseManager : MonoBehaviour
     #region Google SignIn
     public void OnGoogleSignIn()
     {
+        //StartCoroutine(Profile.Instance.GetProfileAsync());
+
         Main.Instance.ShowLoginLoadingBar();
 
         GoogleSignIn.Configuration = configuration;

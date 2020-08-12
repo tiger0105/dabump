@@ -4,6 +4,7 @@ using Firebase.Firestore;
 using Michsky.UI.ModernUIPack;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
@@ -181,6 +182,7 @@ public class Profile : MonoBehaviour
     {
         m_LoadingBar.SetActive(true);
 
+        //string userId = PlayerPrefs.GetString("UserID", "4lksKO4kUHZc9fXNpmEiz5N5iro1");
         string userId = PlayerPrefs.GetString("UserID", string.Empty);
         string userName = PlayerPrefs.GetString("UserName", string.Empty);
         if (userId == string.Empty)
@@ -220,6 +222,7 @@ public class Profile : MonoBehaviour
             m_NameInputField.text = playerProfile.Name;
             m_CardName.text = playerProfile.Name;
             m_CardName.color = SetInvertedColor(m_CardTopColor.color);
+            m_CardRank.text = playerProfile.Rank == 0 ? "Rank Not Available" : ("Rank " + playerProfile.Rank);
             m_CardPosition.text = m_TeamPositionSelector.elements[index];
             m_CardPosition.color = SetInvertedColor(m_CardBottomColor.color);
 

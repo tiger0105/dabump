@@ -62,11 +62,6 @@ public class Courts : MonoBehaviour
         SetCourtImage(id, imagePath);
     }
 
-    private void UpdateCourt()
-    {
-
-    }
-
     public void SetCourtImage(int id, string imagePath)
     {
         FileInfo fileInfo = new FileInfo(imagePath);

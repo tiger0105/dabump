@@ -1,5 +1,7 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,9 +11,14 @@ public class PlayerInfo : MonoBehaviour
 {
     public static PlayerInfo Instance;
 
+    [Header("PlayerInfo")]
     [SerializeField] private GameObject m_PlayerCardPrefab;
     [SerializeField] private ScrollRect m_PlayerInfoScrollRect;
     [SerializeField] private Transform m_PlayerInfoListTransform;
+
+    [Header("Right Panel")]
+    [SerializeField] private GameObject m_RightPanel_TopPlayer_Prefab;
+    [SerializeField] private Transform m_RightPanel_TopPlayer_List;
 
     private void Awake()
     {
@@ -25,6 +32,8 @@ public class PlayerInfo : MonoBehaviour
         if (FirebaseManager.Instance == null || FirebaseManager.Instance.m_PlayerCardList == null)
             return;
 
+        BuildTopPlayerList();
+
         int cardIndex = 0;
 
         foreach (PlayerProfile card in FirebaseManager.Instance.m_PlayerCardList)
@@ -34,6 +43,56 @@ public class PlayerInfo : MonoBehaviour
         }
 
         UpdatePlayerInfoListLayout();
+    }
+
+    public void BuildTopPlayerList()
+    {
+        ClearTopPlayerList();
+
+        List<PlayerProfile> sorted = FirebaseManager.Instance.m_PlayerCardList.OrderBy(item => item.Rank).ToList();
+
+        for (int i = 0; i < sorted.Count; i++)
+        {
+            if (i == 10)
+                break;
+
+            if (i == 0)
+            {
+                sorted[i].IsMVP = true;
+            }
+            else
+            {
+                sorted[i].IsMVP = false;
+            }
+
+            sorted[i].Rank = i + 1;
+
+            if (PlayerPrefs.GetString("UserID", string.Empty) == sorted[i].UserID)
+                continue;
+
+            GameObject topPlayer = Instantiate(m_RightPanel_TopPlayer_Prefab);
+            topPlayer.transform.SetParent(m_RightPanel_TopPlayer_List, false);
+            topPlayer.name = sorted[i].Name;
+            SetPlayerImage(topPlayer.transform.GetChild(1).GetChild(0).GetComponent<RawImage>(), sorted[i].UserID);
+            topPlayer.transform.GetChild(2).GetComponent<TextMeshProUGUI>().text = sorted[i].Name;
+            topPlayer.transform.GetChild(3).gameObject.SetActive(sorted[i].IsMVP);
+            topPlayer.transform.GetChild(4).GetChild(2).GetComponent<TextMeshProUGUI>().text = sorted[i].Badges == 0 ? "Not Available" : sorted[i].Badges.ToString();
+        }
+    }
+
+    private void SetPlayerImage(RawImage image, string userId)
+    {
+
+    }
+
+    private void ClearTopPlayerList()
+    {
+        foreach (Transform topPlayer in m_RightPanel_TopPlayer_List)
+        {
+            Destroy(topPlayer.gameObject);
+        }
+
+        m_RightPanel_TopPlayer_List.DetachChildren();
     }
 
     private void ClearPlayerInfoList()
@@ -58,9 +117,15 @@ public class PlayerInfo : MonoBehaviour
         card.transform.SetParent(m_PlayerInfoListTransform, false);
         card.name = playerCard.Name;
         ColorUtility.TryParseHtmlString("#" + playerCard.CardTopColor, out Color topColor);
-        card.transform.GetChild(1).GetChild(0).GetComponent<ProceduralImage>().color = topColor;
+        card.transform.GetChild(1).GetChild(0).GetComponent<Image>().color = topColor;
+        card.transform.GetChild(1).GetChild(0).GetComponent<Image>().maskable = true;
+        card.transform.GetChild(1).GetChild(0).GetComponent<Image>().enabled = false;
+        card.transform.GetChild(1).GetChild(0).GetComponent<Image>().enabled = true;
         ColorUtility.TryParseHtmlString("#" + playerCard.CardBottomColor, out Color bottomColor);
-        card.transform.GetChild(1).GetChild(1).GetComponent<ProceduralImage>().color = bottomColor;
+        card.transform.GetChild(1).GetChild(1).GetComponent<Image>().color = bottomColor;
+        card.transform.GetChild(1).GetChild(1).GetComponent<Image>().maskable = true;
+        card.transform.GetChild(1).GetChild(1).GetComponent<Image>().enabled = false;
+        card.transform.GetChild(1).GetChild(1).GetComponent<Image>().enabled = true;
         card.transform.GetChild(4).GetComponent<TextMeshProUGUI>().text = playerCard.Name;
         card.transform.GetChild(4).GetComponent<TextMeshProUGUI>().color = SetInvertedColor(topColor);
         card.transform.GetChild(5).GetComponent<TextMeshProUGUI>().text = playerCard.Rank == 0 ? "" : "RANK " + playerCard.Rank;
