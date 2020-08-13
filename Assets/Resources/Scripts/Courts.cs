@@ -3,7 +3,6 @@ using Firebase.Firestore;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;

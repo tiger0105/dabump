@@ -2,10 +2,12 @@
 using Firebase.Extensions;
 using Firebase.Firestore;
 using ImageAndVideoPicker;
+using Michsky.UI.Frost;
 using Michsky.UI.ModernUIPack;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
@@ -15,6 +17,8 @@ using UnityEngine.UI;
 public class Profile : MonoBehaviour
 {
     public static Profile Instance;
+
+    [SerializeField] private ToggleGroup m_Tab;
 
     [Header("Profile Tab")]
     [SerializeField] public TMP_InputField m_NameInputField;
@@ -30,10 +34,10 @@ public class Profile : MonoBehaviour
     [SerializeField] public Button m_UploadCardPhotoButton;
     [SerializeField] public RawImage m_CardPhoto;
 
-    private string m_TemporaryPhotoPath;
+    private string m_TemporaryPhotoPath = "";
 
     [SerializeField] public Button m_SaveButton;
-    [SerializeField] private GameObject m_LoadingBar;
+    [SerializeField] public GameObject m_LoadingBar;
 
     [Header("Account Tab")]
     [SerializeField] private TextMeshProUGUI m_Connected;
@@ -54,8 +58,8 @@ public class Profile : MonoBehaviour
 
     [Header("Right Panel")]
     [SerializeField] private RawImage m_RightPanel_Photo;
-    [SerializeField] private TextMeshProUGUI m_RightPanel_Name;
-    [SerializeField] private TextMeshProUGUI m_RightPanel_TeamPosition;
+    [SerializeField] public TextMeshProUGUI m_RightPanel_Name;
+    [SerializeField] public TextMeshProUGUI m_RightPanel_TeamPosition;
     [SerializeField] private TextMeshProUGUI m_RightPanel_Badge;
     [SerializeField] private TextMeshProUGUI m_RightPanel_Rank;
     [SerializeField] private GameObject m_RightPanel_IsMVP;
@@ -66,9 +70,20 @@ public class Profile : MonoBehaviour
         Instance = this;
     }
 
+    public void TabButtonClicked(bool isOn)
+    {
+        if (isOn == true)
+        {
+            Toggle activeToggle = m_Tab.ActiveToggles().FirstOrDefault();
+            if (activeToggle != null)
+            {
+                GetComponent<TopPanelManager>().PanelAnim(activeToggle.transform.GetSiblingIndex());
+            }
+        }
+    }
+
     private void Start()
     {
-        PickerEventListener.onImageSelect += OnImageSelect;
         PickerEventListener.onImageLoad += OnImageLoad;
         PickerEventListener.onError += OnError;
         PickerEventListener.onCancel += OnCancel;
@@ -90,6 +105,8 @@ public class Profile : MonoBehaviour
 
             DocumentReference documentReference = firestore.Collection("Profiles").Document(userId);
 
+            await FirebaseManager.Instance.DeleteProfilePhotoAsync("Profiles/" + userId + ".jpg");
+
             await documentReference.DeleteAsync().ContinueWithOnMainThread(async t =>
             {
                 if (t.IsCompleted)
@@ -98,13 +115,13 @@ public class Profile : MonoBehaviour
                     {
                         if (task.IsCanceled)
                         {
-                            DebugLog("DeleteAsync was canceled.");
+                            Debug.Log("DeleteAsync was canceled.");
                             return;
                         }
 
                         if (task.IsFaulted)
                         {
-                            DebugLog("DeleteAsync encountered an error: " + task.Exception);
+                            Debug.Log("DeleteAsync encountered an error: " + task.Exception);
                             return;
                         }
 
@@ -119,38 +136,42 @@ public class Profile : MonoBehaviour
         }
     }
 
-    public async Task UpdateDisplayName(FirebaseUser user, string name)
-    {
-        if (user != null)
-        {
-            UserProfile userProfile = new UserProfile
-            {
-                DisplayName = name
-            };
-
-            await user.UpdateUserProfileAsync(userProfile).ContinueWith(t =>
-            {
-                if (t.IsCanceled)
-                {
-                    DebugLog("OnGoogleAuthenticationFinished t.IsCanceled");
-                    return;
-                }
-
-                if (t.IsFaulted)
-                {
-                    DebugLog("OnGoogleAuthenticationFinished t.IsFaulted");
-                    return;
-                }
-
-                DebugLog("Display name updated successfully");
-            });
-
-        }
-    }
-
     public void SaveProfile()
     {
-        FirebaseManager.Instance.SaveProfile();
+        FirebaseManager.Instance.SaveProfile(m_TemporaryPhotoPath);
+    }
+
+    public void SetProfileImage(string imagePath)
+    {
+        FileInfo fileInfo = new FileInfo(Application.persistentDataPath + "/" + imagePath);
+
+        if (!fileInfo.Exists) return;
+
+        MemoryStream dest = new MemoryStream();
+
+        using (Stream source = fileInfo.OpenRead())
+        {
+            byte[] buffer = new byte[2048];
+            int bytesRead;
+            while ((bytesRead = source.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                dest.Write(buffer, 0, bytesRead);
+            }
+        }
+
+        byte[] imageBytes = dest.ToArray();
+
+        Texture2D texture = new Texture2D(296, 370);
+        texture.LoadImage(imageBytes);
+        float aspectRatio = (float)texture.width / texture.height;
+
+        m_CardPhoto.texture = texture;
+        m_CardPhoto.GetComponent<AspectRatioFitter>().aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+        m_CardPhoto.GetComponent<AspectRatioFitter>().aspectRatio = aspectRatio;
+
+        m_RightPanel_Photo.texture = texture;
+        m_RightPanel_Photo.GetComponent<AspectRatioFitter>().aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+        m_RightPanel_Photo.GetComponent<AspectRatioFitter>().aspectRatio = aspectRatio;
     }
 
     public void DeleteAccount()
@@ -158,53 +179,10 @@ public class Profile : MonoBehaviour
         FirebaseManager.Instance.DeleteAccount();
     }
 
-    public async Task SaveProfileAsync(FirebaseUser user, FirebaseFirestore firestore)
-    {
-        m_LoadingBar.SetActive(true);
-
-        string userId = PlayerPrefs.GetString("UserID", string.Empty);
-        if (userId == string.Empty)
-        {
-            m_LoadingBar.SetActive(false);
-            return;
-        }
-
-        await UpdateDisplayName(user, m_NameInputField.text);
-
-        bool isImageUploaded = false;
-
-        if (m_TemporaryPhotoPath.Length > 0 && File.Exists(m_TemporaryPhotoPath))
-        {
-            await FirebaseManager.Instance.UploadProfilePhotoAsync("file://" + m_TemporaryPhotoPath, "Profiles/" + userId + ".jpg");
-            isImageUploaded = true;
-        }
-
-        DocumentReference documentReference = firestore.Collection("Profiles").Document(userId);
-        Dictionary<string, object> profile = new Dictionary<string, object>
-        {
-            ["UserID"] = userId,
-            ["Name"] = m_NameInputField.text,
-            ["TeamPosition"] = m_CardPosition.text,
-            ["CardTopColor"] = ColorUtility.ToHtmlStringRGB(m_CardTopColor.color),
-            ["CardBottomColor"] = ColorUtility.ToHtmlStringRGB(m_CardBottomColor.color),
-        };
-
-        if (isImageUploaded == true)
-            profile.Add("Image", "Profiles/" + userId + ".jpg");
-
-        await documentReference.SetAsync(profile).ContinueWithOnMainThread(task =>
-        {
-
-        });
-
-        m_LoadingBar.SetActive(false);
-    }
-
     public IEnumerator GetProfileAsync()
     {
         m_LoadingBar.SetActive(true);
 
-        //string userId = PlayerPrefs.GetString("UserID", "4lksKO4kUHZc9fXNpmEiz5N5iro1");
         string userId = PlayerPrefs.GetString("UserID", string.Empty);
         string userName = PlayerPrefs.GetString("UserName", string.Empty);
         if (userId == string.Empty)
@@ -227,8 +205,6 @@ public class Profile : MonoBehaviour
                 yield break;
             }
 
-            DebugLog(www.downloadHandler.text);
-
             PlayerProfile playerProfile = JsonUtility.FromJson<PlayerProfile>(www.downloadHandler.text);
 
             ColorUtility.TryParseHtmlString("#" + playerProfile.CardTopColor, out Color topColor);
@@ -248,9 +224,11 @@ public class Profile : MonoBehaviour
             m_CardPosition.text = m_TeamPositionSelector.elements[index];
             m_CardPosition.color = SetInvertedColor(m_CardBottomColor.color);
 
-            //m_CardPhoto 
-
-            //m_RightPanel_Photo
+            if (playerProfile.Image.Length > 0)
+            {
+                SetProfileImage(playerProfile.Image);
+                m_UploadCardPhotoButton.transform.GetChild(0).gameObject.SetActive(false);
+            }
 
             m_RightPanel_Name.text = playerProfile.Name;
             m_RightPanel_TeamPosition.text = playerProfile.TeamPosition.ToUpper();
@@ -313,29 +291,24 @@ public class Profile : MonoBehaviour
 #endif
     }
 
-    private void OnImageSelect(string imgPath, ImageOrientation imgOrientation)
-    {
-        DebugLog("Selected Image Location: " + imgPath);
-    }
-
     private void OnImageLoad(string imgPath, Texture2D tex, ImageOrientation imgOrientation)
     {
-        DebugLog("Loaded Image Location: " + imgPath);
         m_TemporaryPhotoPath = imgPath;
         m_CardPhoto.texture = tex;
         m_RightPanel_Photo.texture = tex;
+        m_RightPanel_Photo.GetComponent<AspectRatioFitter>().aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+        m_RightPanel_Photo.GetComponent<AspectRatioFitter>().aspectRatio = (float)tex.width / tex.height;
+
         m_UploadCardPhotoButton.transform.GetChild(0).gameObject.SetActive(false);
     }
 
     private void OnError(string errorMsg)
     {
-        DebugLog("Error : " + errorMsg);
         m_TemporaryPhotoPath = "";
     }
 
     private void OnCancel()
     {
-        DebugLog("Cancel by user");
         m_TemporaryPhotoPath = ""; 
     }
 
@@ -373,12 +346,5 @@ public class Profile : MonoBehaviour
 
         m_HelpForm_LoadingBar.SetActive(false);
         m_HelpForm_SubmitButton.enabled = true;
-    }
-
-    public TextMeshProUGUI debugText;
-
-    private void DebugLog(string text)
-    {
-        debugText.text += text + "\n";
     }
 }

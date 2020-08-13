@@ -1,11 +1,8 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.UI.ProceduralImage;
 
 public class PlayerInfo : MonoBehaviour
 {
@@ -49,40 +46,61 @@ public class PlayerInfo : MonoBehaviour
     {
         ClearTopPlayerList();
 
-        List<PlayerProfile> sorted = FirebaseManager.Instance.m_PlayerCardList.OrderBy(item => item.Rank).ToList();
-
-        for (int i = 0; i < sorted.Count; i++)
+        for (int i = 0; i < FirebaseManager.Instance.m_PlayerCardList.Count; i++)
         {
             if (i == 10)
                 break;
 
             if (i == 0)
             {
-                sorted[i].IsMVP = true;
+                FirebaseManager.Instance.m_PlayerCardList[i].IsMVP = true;
             }
             else
             {
-                sorted[i].IsMVP = false;
+                FirebaseManager.Instance.m_PlayerCardList[i].IsMVP = false;
             }
 
-            sorted[i].Rank = i + 1;
+            FirebaseManager.Instance.m_PlayerCardList[i].Rank = i + 1;
 
-            if (PlayerPrefs.GetString("UserID", string.Empty) == sorted[i].UserID)
+            if (PlayerPrefs.GetString("UserID", string.Empty) == FirebaseManager.Instance.m_PlayerCardList[i].UserID)
                 continue;
 
             GameObject topPlayer = Instantiate(m_RightPanel_TopPlayer_Prefab);
             topPlayer.transform.SetParent(m_RightPanel_TopPlayer_List, false);
-            topPlayer.name = sorted[i].Name;
-            SetPlayerImage(topPlayer.transform.GetChild(1).GetChild(0).GetComponent<RawImage>(), sorted[i].UserID);
-            topPlayer.transform.GetChild(2).GetComponent<TextMeshProUGUI>().text = sorted[i].Name;
-            topPlayer.transform.GetChild(3).gameObject.SetActive(sorted[i].IsMVP);
-            topPlayer.transform.GetChild(4).GetChild(2).GetComponent<TextMeshProUGUI>().text = sorted[i].Badges == 0 ? "Not Available" : sorted[i].Badges.ToString();
+            topPlayer.name = FirebaseManager.Instance.m_PlayerCardList[i].Name;
+            SetPlayerImage(topPlayer.transform.GetChild(1).GetChild(0).GetComponent<RawImage>(), FirebaseManager.Instance.m_PlayerCardList[i].UserID);
+            topPlayer.transform.GetChild(2).GetComponent<TextMeshProUGUI>().text = FirebaseManager.Instance.m_PlayerCardList[i].Name;
+            topPlayer.transform.GetChild(3).gameObject.SetActive(FirebaseManager.Instance.m_PlayerCardList[i].IsMVP);
+            topPlayer.transform.GetChild(4).GetChild(2).GetComponent<TextMeshProUGUI>().text 
+                = FirebaseManager.Instance.m_PlayerCardList[i].Badges == 0 ? "Not Available" : FirebaseManager.Instance.m_PlayerCardList[i].Badges.ToString();
         }
     }
 
     private void SetPlayerImage(RawImage image, string userId)
     {
+        FileInfo fileInfo = new FileInfo(Application.persistentDataPath + "/Profiles/" + userId + ".jpg");
 
+        if (!fileInfo.Exists) return;
+
+        MemoryStream dest = new MemoryStream();
+
+        using (Stream source = fileInfo.OpenRead())
+        {
+            byte[] buffer = new byte[2048];
+            int bytesRead;
+            while ((bytesRead = source.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                dest.Write(buffer, 0, bytesRead);
+            }
+        }
+
+        byte[] imageBytes = dest.ToArray();
+
+        Texture2D texture = new Texture2D(296, 370);
+        texture.LoadImage(imageBytes);
+        float aspectRatio = (float)texture.width / texture.height;
+        image.GetComponent<AspectRatioFitter>().aspectRatio = aspectRatio;
+        image.texture = texture;
     }
 
     private void ClearTopPlayerList()
@@ -132,7 +150,7 @@ public class PlayerInfo : MonoBehaviour
         card.transform.GetChild(6).GetComponent<TextMeshProUGUI>().text = playerCard.TeamPosition;
         card.transform.GetChild(6).GetComponent<TextMeshProUGUI>().color = SetInvertedColor(bottomColor);
         if (playerCard.Image.Length > 0)
-            SetPlayerImage(cardIndex, playerCard.Image);
+            SetPlayerImage(card.transform.GetChild(3).GetChild(0).GetChild(0).GetComponent<RawImage>(), playerCard.UserID);
     }
 
     private Color SetInvertedColor(Color original)
@@ -146,36 +164,6 @@ public class PlayerInfo : MonoBehaviour
         }
 
         return inverted;
-    }
-
-    public void SetPlayerImage(int id, string imagePath)
-    {
-        if (m_PlayerInfoListTransform.childCount <= id)
-            return;
-
-        FileInfo fileInfo = new FileInfo(imagePath);
-
-        if (!fileInfo.Exists) return;
-
-        MemoryStream dest = new MemoryStream();
-
-        using (Stream source = fileInfo.OpenRead())
-        {
-            byte[] buffer = new byte[2048];
-            int bytesRead;
-            while ((bytesRead = source.Read(buffer, 0, buffer.Length)) > 0)
-            {
-                dest.Write(buffer, 0, bytesRead);
-            }
-        }
-
-        byte[] imageBytes = dest.ToArray();
-
-        Texture2D texture = new Texture2D(296, 370);
-        texture.LoadImage(imageBytes);
-        float aspectRatio = (float)texture.width / texture.height;
-        m_PlayerInfoListTransform.GetChild(id).GetChild(3).GetChild(0).GetChild(0).GetComponent<AspectRatioFitter>().aspectRatio = aspectRatio;
-        m_PlayerInfoListTransform.GetChild(id).GetChild(3).GetChild(0).GetChild(0).GetComponent<RawImage>().texture = texture;
     }
 
     private void UpdatePlayerInfoListLayout()

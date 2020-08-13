@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using TMPro;
 using UnityEngine;
 using Query = Firebase.Firestore.Query;
 
@@ -373,7 +374,7 @@ public class FirebaseManager : MonoBehaviour
     private async Task FetchPlayersInfoAsync()
     {
         CollectionReference playersRef = firestore.Collection("Profiles");
-        Query query = playersRef.OrderBy("Name");
+        Query query = playersRef.OrderBy("Rank");
 
         string persistentCourtsPath = Application.persistentDataPath + "/Profiles";
 
@@ -455,14 +456,6 @@ public class FirebaseManager : MonoBehaviour
     {
         await imageReference.GetFileAsync(path).ContinueWith(resultTask =>
         {
-            if (!resultTask.IsFaulted && !resultTask.IsCanceled)
-            {
-                if (PlayerInfo.Instance != null)
-                {
-                    PlayerInfo.Instance.SetPlayerImage(id, path);
-                }
-            }
-
             m_ProfilesListDownloaded[id] = true;
             if (m_ProfilesListDownloaded.Count == m_ProfilesListCount)
                 VerifyProfilesListDownloadProgressCompleted();
@@ -481,9 +474,113 @@ public class FirebaseManager : MonoBehaviour
     }
     #endregion
 
-    public void SaveProfile()
+    public async Task UpdateDisplayName(string name)
     {
-        _ = Profile.Instance.SaveProfileAsync(user, firestore);
+        if (user != null)
+        {
+            UserProfile userProfile = new UserProfile
+            {
+                DisplayName = name
+            };
+
+            await user.UpdateUserProfileAsync(userProfile).ContinueWith(t =>
+            {
+                if (t.IsCanceled)
+                {
+                    Debug.Log("OnGoogleAuthenticationFinished t.IsCanceled");
+                    return;
+                }
+
+                if (t.IsFaulted)
+                {
+                    Debug.Log("OnGoogleAuthenticationFinished t.IsFaulted");
+                    return;
+                }
+
+                Debug.Log("Display name updated successfully");
+            });
+
+        }
+    }
+
+    public void SaveProfile(string temporaryPhotoPath)
+    {
+        _ = SaveProfileAsync(temporaryPhotoPath);
+    }
+
+    public async Task SaveProfileAsync(string temporaryPhotoPath)
+    {
+        DebugLog("-6");
+
+        Profile.Instance.m_LoadingBar.SetActive(true);
+
+        DebugLog("-5");
+
+        string userId = PlayerPrefs.GetString("UserID", string.Empty);
+        if (userId == string.Empty)
+        {
+            Profile.Instance.m_LoadingBar.SetActive(false);
+            return;
+        }
+
+        DebugLog("-4");
+
+        await UpdateDisplayName(Profile.Instance.m_NameInputField.text);
+
+        bool isImageUploaded = false;
+
+        DebugLog("-3");
+
+        if (temporaryPhotoPath.Length > 0 
+            && File.Exists(temporaryPhotoPath))
+        {
+            isImageUploaded = await UploadProfilePhotoAsync("file://" + temporaryPhotoPath, "Profiles/" + userId + ".jpg");
+        }
+
+        DebugLog("-2");
+
+        DocumentReference documentReference = firestore.Collection("Profiles").Document(userId);
+
+        DebugLog("-1");
+
+        Dictionary<string, object> profile = new Dictionary<string, object>
+        {
+            ["Name"] = Profile.Instance.m_NameInputField.text,
+            ["TeamPosition"] = Profile.Instance.m_CardPosition.text,
+            ["CardTopColor"] = ColorUtility.ToHtmlStringRGB(Profile.Instance.m_CardTopColor.color),
+            ["CardBottomColor"] = ColorUtility.ToHtmlStringRGB(Profile.Instance.m_CardBottomColor.color),
+        };
+
+        DebugLog("0");
+
+        if (isImageUploaded == true)
+            profile.Add("Image", "Profiles/" + userId + ".jpg");
+
+        DebugLog("1");
+
+        await documentReference.UpdateAsync(profile).ContinueWith(task =>
+        {
+            DebugLog("2");
+            if (task.IsCompleted)
+            {
+                DebugLog("3");
+                if (isImageUploaded == true)
+                {
+                    string fileName = Application.persistentDataPath + "/Profiles/" + userId + ".jpg";
+                    if (File.Exists(fileName))
+                    {
+                        File.Delete(fileName);
+                    }
+                }
+
+                Profile.Instance.m_RightPanel_Name.text = Profile.Instance.m_NameInputField.text;
+                Profile.Instance.m_RightPanel_TeamPosition.text = Profile.Instance.m_CardPosition.text;
+            }
+        });
+
+        DebugLog("4");
+
+        Profile.Instance.m_LoadingBar.SetActive(false);
     }
 
     public void DeleteAccount()
@@ -491,21 +588,29 @@ public class FirebaseManager : MonoBehaviour
         _ = Profile.Instance.DeleteAccountAsync(user, auth, firestore);
     }
 
-    public async Task UploadProfilePhotoAsync(string bucketUrl, string fileName)
+    public async Task DeleteProfilePhotoAsync(string bucketUrl)
     {
+        StorageReference imageReference = storage.GetReference(bucketUrl);
+        await imageReference.DeleteAsync();
+    }
+
+    public async Task<bool> UploadProfilePhotoAsync(string fileName, string bucketUrl)
+    {
+        bool isUploaded = false;
         StorageReference imageReference = storage.GetReference(bucketUrl);
         await imageReference.PutFileAsync(fileName).ContinueWith((Task<StorageMetadata> task) =>
         {
-            if (task.IsFaulted || task.IsCanceled)
+            if (task.IsCompleted)
             {
-                Debug.Log(task.Exception.ToString());
-            }
-            else
-            {
-                StorageMetadata metadata = task.Result;
-                string download_url = metadata.Path;
-                Debug.Log("download url = " + download_url);
+                isUploaded = true;
             }
         });
+
+        return isUploaded;
+    }
+
+    public void DebugLog(string text)
+    {
+        GetComponentInChildren<TextMeshProUGUI>().text += text + "\n";
     }
 }
