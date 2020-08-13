@@ -6,7 +6,6 @@ using Michsky.UI.ModernUIPack;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
@@ -67,6 +66,18 @@ public class Profile : MonoBehaviour
         Instance = this;
     }
 
+    private void Start()
+    {
+        PickerEventListener.onImageSelect += OnImageSelect;
+        PickerEventListener.onImageLoad += OnImageLoad;
+        PickerEventListener.onError += OnError;
+        PickerEventListener.onCancel += OnCancel;
+
+#if UNITY_ANDROID
+        AndroidPicker.CheckPermissions();
+#endif
+    }
+
     public async Task DeleteAccountAsync(FirebaseUser user, FirebaseAuth auth, FirebaseFirestore firestore)
     {
         if (user != null)
@@ -87,13 +98,13 @@ public class Profile : MonoBehaviour
                     {
                         if (task.IsCanceled)
                         {
-                            Debug.Log("DeleteAsync was canceled.");
+                            DebugLog("DeleteAsync was canceled.");
                             return;
                         }
 
                         if (task.IsFaulted)
                         {
-                            Debug.Log("DeleteAsync encountered an error: " + task.Exception);
+                            DebugLog("DeleteAsync encountered an error: " + task.Exception);
                             return;
                         }
 
@@ -121,17 +132,17 @@ public class Profile : MonoBehaviour
             {
                 if (t.IsCanceled)
                 {
-                    Debug.Log("OnGoogleAuthenticationFinished t.IsCanceled");
+                    DebugLog("OnGoogleAuthenticationFinished t.IsCanceled");
                     return;
                 }
 
                 if (t.IsFaulted)
                 {
-                    Debug.Log("OnGoogleAuthenticationFinished t.IsFaulted");
+                    DebugLog("OnGoogleAuthenticationFinished t.IsFaulted");
                     return;
                 }
 
-                Debug.Log("Display name updated successfully");
+                DebugLog("Display name updated successfully");
             });
 
         }
@@ -164,7 +175,7 @@ public class Profile : MonoBehaviour
 
         if (m_TemporaryPhotoPath.Length > 0 && File.Exists(m_TemporaryPhotoPath))
         {
-            await FirebaseManager.Instance.UploadProfilePhotoAsync(m_TemporaryPhotoPath, "Profiles/" + userId + ".jpg");
+            await FirebaseManager.Instance.UploadProfilePhotoAsync("file://" + m_TemporaryPhotoPath, "Profiles/" + userId + ".jpg");
             isImageUploaded = true;
         }
 
@@ -216,7 +227,7 @@ public class Profile : MonoBehaviour
                 yield break;
             }
 
-            Debug.Log(www.downloadHandler.text);
+            DebugLog(www.downloadHandler.text);
 
             PlayerProfile playerProfile = JsonUtility.FromJson<PlayerProfile>(www.downloadHandler.text);
 
@@ -302,48 +313,29 @@ public class Profile : MonoBehaviour
 #endif
     }
 
-    private void OnEnable()
-    {
-        PickerEventListener.onImageSelect += OnImageSelect;
-        PickerEventListener.onImageLoad += OnImageLoad;
-        PickerEventListener.onError += OnError;
-        PickerEventListener.onCancel += OnCancel;
-
-#if UNITY_ANDROID
-        AndroidPicker.CheckPermissions();
-#endif
-    }
-
-    private void OnDisable()
-    {
-        PickerEventListener.onImageSelect -= OnImageSelect;
-        PickerEventListener.onImageLoad -= OnImageLoad;
-        PickerEventListener.onError -= OnError;
-        PickerEventListener.onCancel -= OnCancel;
-    }
-
     private void OnImageSelect(string imgPath, ImageOrientation imgOrientation)
     {
-        Debug.Log("Image Location : " + imgPath);
+        DebugLog("Selected Image Location: " + imgPath);
     }
 
     private void OnImageLoad(string imgPath, Texture2D tex, ImageOrientation imgOrientation)
     {
-        Debug.Log("Image Location : " + imgPath);
+        DebugLog("Loaded Image Location: " + imgPath);
         m_TemporaryPhotoPath = imgPath;
         m_CardPhoto.texture = tex;
+        m_RightPanel_Photo.texture = tex;
         m_UploadCardPhotoButton.transform.GetChild(0).gameObject.SetActive(false);
     }
 
     private void OnError(string errorMsg)
     {
-        Debug.Log("Error : " + errorMsg);
+        DebugLog("Error : " + errorMsg);
         m_TemporaryPhotoPath = "";
     }
 
     private void OnCancel()
     {
-        Debug.Log("Cancel by user");
+        DebugLog("Cancel by user");
         m_TemporaryPhotoPath = ""; 
     }
 
@@ -381,5 +373,12 @@ public class Profile : MonoBehaviour
 
         m_HelpForm_LoadingBar.SetActive(false);
         m_HelpForm_SubmitButton.enabled = true;
+    }
+
+    public TextMeshProUGUI debugText;
+
+    private void DebugLog(string text)
+    {
+        debugText.text += text + "\n";
     }
 }
