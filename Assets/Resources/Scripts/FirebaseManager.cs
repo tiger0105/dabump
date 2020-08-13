@@ -510,11 +510,7 @@ public class FirebaseManager : MonoBehaviour
 
     public async Task SaveProfileAsync(string temporaryPhotoPath)
     {
-        DebugLog("-6");
-
         Profile.Instance.m_LoadingBar.SetActive(true);
-
-        DebugLog("-5");
 
         string userId = PlayerPrefs.GetString("UserID", string.Empty);
         if (userId == string.Empty)
@@ -523,13 +519,9 @@ public class FirebaseManager : MonoBehaviour
             return;
         }
 
-        DebugLog("-4");
-
         await UpdateDisplayName(Profile.Instance.m_NameInputField.text);
 
         bool isImageUploaded = false;
-
-        DebugLog("-3");
 
         if (temporaryPhotoPath.Length > 0 
             && File.Exists(temporaryPhotoPath))
@@ -537,11 +529,7 @@ public class FirebaseManager : MonoBehaviour
             isImageUploaded = await UploadProfilePhotoAsync("file://" + temporaryPhotoPath, "Profiles/" + userId + ".jpg");
         }
 
-        DebugLog("-2");
-
         DocumentReference documentReference = firestore.Collection("Profiles").Document(userId);
-
-        DebugLog("-1");
 
         Dictionary<string, object> profile = new Dictionary<string, object>
         {
@@ -551,19 +539,13 @@ public class FirebaseManager : MonoBehaviour
             ["CardBottomColor"] = ColorUtility.ToHtmlStringRGB(Profile.Instance.m_CardBottomColor.color),
         };
 
-        DebugLog("0");
-
         if (isImageUploaded == true)
             profile.Add("Image", "Profiles/" + userId + ".jpg");
 
-        DebugLog("1");
-
         await documentReference.UpdateAsync(profile).ContinueWith(task =>
         {
-            DebugLog("2");
             if (task.IsCompleted)
             {
-                DebugLog("3");
                 if (isImageUploaded == true)
                 {
                     string fileName = Application.persistentDataPath + "/Profiles/" + userId + ".jpg";
@@ -577,8 +559,6 @@ public class FirebaseManager : MonoBehaviour
                 Profile.Instance.m_RightPanel_TeamPosition.text = Profile.Instance.m_CardPosition.text;
             }
         });
-
-        DebugLog("4");
 
         Profile.Instance.m_LoadingBar.SetActive(false);
     }

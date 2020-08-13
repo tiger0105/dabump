@@ -227,7 +227,8 @@ public class Profile : MonoBehaviour
             m_NameInputField.text = playerProfile.Name;
             m_CardName.text = playerProfile.Name;
             m_CardName.color = SetInvertedColor(m_CardTopColor.color);
-            m_CardRank.text = playerProfile.Rank == 0 ? "Rank NA" : ("Rank " + playerProfile.Rank);
+            int rank = FirebaseManager.Instance.m_PlayerCardList.FirstOrDefault(item => item.UserID == userId).Rank;
+            m_CardRank.text = rank == 0 ? "Rank NA" : ("Rank " + rank);
             m_CardPosition.text = m_TeamPositionSelector.elements[index];
             m_CardPosition.color = SetInvertedColor(m_CardBottomColor.color);
 
@@ -239,7 +240,7 @@ public class Profile : MonoBehaviour
 
             m_RightPanel_Name.text = playerProfile.Name;
             m_RightPanel_TeamPosition.text = playerProfile.TeamPosition.ToUpper();
-            m_RightPanel_Rank.text = playerProfile.Rank == 0 ? "Rank Not Available" : ("Rank " + playerProfile.Rank);
+            m_RightPanel_Rank.text = rank == 0 ? "Rank Not Available" : ("Rank " + rank);
             m_RightPanel_Badge.text = playerProfile.Badges == 0 ? "Not Available" : playerProfile.Badges.ToString();
             m_RightPanel_IsMVP.SetActive(playerProfile.IsMVP);
         }
