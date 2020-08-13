@@ -145,50 +145,46 @@ public class FirebaseManager : MonoBehaviour
 
     private void OnGoogleAuthenticationFinished(Task<GoogleSignInUser> task)
     {
+        if (task.IsCanceled)
+        {
+            Main.Instance.HideLoginLoadingBar();
+            return;
+        }
+
+        
         if (task.IsFaulted)
         {
-            Debug.Log("OnGoogleAuthenticationFinished task.IsFaulted");
             Main.Instance.HideLoginLoadingBar();
+            return;
         }
-        else if (task.IsCanceled)
+
+        Credential credential = GoogleAuthProvider.GetCredential(task.Result.IdToken, null);
+        auth.SignInWithCredentialAsync(credential).ContinueWith(t =>
         {
-            Main.Instance.HideLoginLoadingBar();
-            Debug.Log("OnGoogleAuthenticationFinished task.IsCanceled");
-        }
-        else
-        {
-            Credential credential = GoogleAuthProvider.GetCredential(task.Result.IdToken, null);
-            auth.SignInWithCredentialAsync(credential).ContinueWith(t =>
+            if (t.IsCanceled)
             {
-                if (t.IsCanceled)
-                {
-                    Main.Instance.HideLoginLoadingBar();
-                    Debug.Log("OnGoogleAuthenticationFinished t.IsCanceled");
-                    return;
-                }
-
-                if (t.IsFaulted)
-                {
-                    Main.Instance.HideLoginLoadingBar();
-                    Debug.Log("OnGoogleAuthenticationFinished t.IsFaulted");
-                    return;
-                }
-
-                user = auth.CurrentUser;
-
-                PlayerPrefs.SetString("UserID", user.UserId);
-                PlayerPrefs.SetString("UserName", user.DisplayName);
-                PlayerPrefs.SetString("UserEmail", user.Email);
-                PlayerPrefs.SetString("SocialPlatform", "Google");
-                PlayerPrefs.SetInt("IsLoggedIn", 1);
-
-                StartCoroutine(Profile.Instance.GetProfileAsync());
-
                 Main.Instance.HideLoginLoadingBar();
-            });
+                return;
+            }
 
-            Main.Instance.HideLoginLoadingBar();
-        }
+            if (t.IsFaulted)
+            {
+                Main.Instance.HideLoginLoadingBar();
+                return;
+            }
+
+            user = auth.CurrentUser;
+
+            PlayerPrefs.SetString("UserID", user.UserId);
+            PlayerPrefs.SetString("UserName", user.DisplayName);
+            PlayerPrefs.SetString("UserEmail", user.Email);
+            PlayerPrefs.SetString("SocialPlatform", "Google");
+            PlayerPrefs.SetInt("IsLoggedIn", 1);
+
+            StartCoroutine(Profile.Instance.GetProfileAsync());
+        });
+
+        Main.Instance.HideLoginLoadingBar();
     }
     #endregion
 
@@ -202,7 +198,7 @@ public class FirebaseManager : MonoBehaviour
 
     private void OnFacebookAuthenticationFinished(IResult result)
     {
-        if (result.Error.Length > 0 || result.Cancelled)
+        if (result.Cancelled || result.Error.Length > 0)
         {
             Main.Instance.HideLoginLoadingBar();
             return;
@@ -246,6 +242,8 @@ public class FirebaseManager : MonoBehaviour
             PlayerPrefs.SetInt("IsLoggedIn", 1);
 
             StartCoroutine(Profile.Instance.GetProfileAsync());
+
+            Main.Instance.HideLoginLoadingBar();
         });
 
         Main.Instance.HideLoginLoadingBar();
@@ -379,9 +377,8 @@ public class FirebaseManager : MonoBehaviour
     #region Players Information
     private async Task FetchPlayersInfoAsync()
     {
-        Debug.Log("FetchPlayersInfoAsync()");
         CollectionReference playersRef = firestore.Collection("Profiles");
-        Query query = playersRef.OrderBy("Badges");
+        Query query = playersRef.OrderByDescending("Badges");
 
         string persistentCourtsPath = Application.persistentDataPath + "/Profiles";
 

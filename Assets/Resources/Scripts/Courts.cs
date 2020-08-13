@@ -18,6 +18,8 @@ public class Courts : MonoBehaviour
     [SerializeField] private ScrollRect m_CourtScrollRect;
     [SerializeField] private Transform m_CourtListTransform;
 
+    [SerializeField] private List<Sprite> m_BadgeIcons;
+
     private void Awake()
     {
         Instance = this;
@@ -75,6 +77,8 @@ public class Courts : MonoBehaviour
         else
             playersList = checkedInPlayers.Aggregate((a, x) => a + ", " + x).ToString();
         card.transform.GetChild(1).GetChild(3).GetComponent<TextMeshProUGUI>().text = playersList;
+
+        card.transform.GetChild(1).GetChild(5).GetComponent<Image>().sprite = m_BadgeIcons[id - 1];
 
         SetCourtImage(id, imagePath);
     }

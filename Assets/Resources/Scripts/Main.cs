@@ -23,6 +23,8 @@ public class Main : MonoBehaviour
 
     public void HideLoginLoadingBar()
     {
+        Debug.Log("Hide Loading Bar");
+        m_SplashScreen.GetComponent<Animator>().Play("Login");
         m_MenuManager.GetComponent<BlurManager>().BlurOutAnim();
         m_LoadingBar.GetComponent<CanvasGroup>().alpha = 0;
     }

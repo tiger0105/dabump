@@ -18,6 +18,8 @@ public class Profile : MonoBehaviour
 {
     public static Profile Instance;
 
+    [SerializeField] private Transform m_CourtListTransform;
+
     [SerializeField] private ToggleGroup m_Tab;
 
     [Header("Profile Tab")]
@@ -246,6 +248,8 @@ public class Profile : MonoBehaviour
             m_RightPanel_Rank.text = rank == 0 ? "Rank Not Available" : ("Rank " + rank);
             m_RightPanel_Badge.text = playerProfile.Badges == 0 ? "Not Available" : playerProfile.Badges.ToString();
             m_RightPanel_IsMVP.SetActive(playerProfile.IsMVP);
+
+            SetCourtCheckedInAndBadgeStatus(playerProfile);
         }
 
         m_Connected.text = PlayerPrefs.GetInt("IsLoggedIn", 0) == 0 ? string.Empty : "Connected";
@@ -258,6 +262,28 @@ public class Profile : MonoBehaviour
 
         PlayerInfo.Instance.BuildPlayerInfoList();
         Main.Instance.SwitchToMainPanel();
+    }
+
+    private void SetCourtCheckedInAndBadgeStatus(PlayerProfile profile)
+    {
+        List<int> visitedCourts = new List<int>();
+        if (profile.VisitedCourts.Length > 0)
+        {
+            visitedCourts = profile.VisitedCourts.Split(',').Select(int.Parse).ToList();
+        }
+
+        for (int i = 0; i < visitedCourts.Count; i ++)
+        {
+            if (visitedCourts[i] > m_CourtListTransform.childCount)
+                continue;
+
+            m_CourtListTransform.GetChild(visitedCourts[i] - 1).GetChild(1).GetChild(5).GetComponent<Image>().color = Color.white;
+        }
+
+        if (profile.CheckedInCourt > 0 && profile.CheckedInCourt <= m_CourtListTransform.childCount)
+        {
+            m_CourtListTransform.GetChild(profile.CheckedInCourt - 1).GetChild(1).GetChild(4).gameObject.SetActive(true);
+        }
     }
 
     public Color SetInvertedColor(Color original)
