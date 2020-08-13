@@ -62,7 +62,7 @@ public class Profile : MonoBehaviour
     [SerializeField] public TextMeshProUGUI m_RightPanel_Name;
     [SerializeField] public TextMeshProUGUI m_RightPanel_TeamPosition;
     [SerializeField] private TextMeshProUGUI m_RightPanel_Badge;
-    [SerializeField] private TextMeshProUGUI m_RightPanel_Rank;
+    [SerializeField] public TextMeshProUGUI m_RightPanel_Rank;
     [SerializeField] private GameObject m_RightPanel_IsMVP;
 
 
@@ -227,11 +227,11 @@ public class Profile : MonoBehaviour
             m_NameInputField.text = playerProfile.Name;
             m_CardName.text = playerProfile.Name;
             m_CardName.color = SetInvertedColor(m_CardTopColor.color);
-            int rank = FirebaseManager.Instance.m_PlayerCardList.FirstOrDefault(item => item.UserID == userId).Rank;
-            m_CardRank.text = rank == 0 ? "Rank NA" : ("Rank " + rank);
             m_CardPosition.text = m_TeamPositionSelector.elements[index];
             m_CardPosition.color = SetInvertedColor(m_CardBottomColor.color);
-
+            int rank = FirebaseManager.Instance.m_PlayerCardList.FirstOrDefault(item => item.UserID == userId).Rank;
+            m_CardRank.text = rank == 0 ? "Rank NA" : ("Rank " + rank);
+            
             if (playerProfile.Image.Length > 0)
             {
                 SetProfileImage(playerProfile.Image);

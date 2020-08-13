@@ -54,7 +54,7 @@ public class FirebaseManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    private async void Start()
+    private void Start()
     {
         m_CourtList = new List<Court>();
         m_PlayerCardList = new List<PlayerProfile>();
@@ -63,14 +63,14 @@ public class FirebaseManager : MonoBehaviour
         m_ProfilesListDownloaded = new List<bool>();
 
 #if UNITY_EDITOR
-        await InitializeFirebaseAsync();
+        InitializeFirebaseAndFetchData();
 #else
-        await FirebaseApp.CheckAndFixDependenciesAsync().ContinueWith(async task =>
+        FirebaseApp.CheckAndFixDependenciesAsync().ContinueWithOnMainThread(task =>
         {
             dependencyStatus = task.Result;
             if (dependencyStatus == DependencyStatus.Available)
             {
-                await InitializeFirebaseAsync();
+                InitializeFirebaseAndFetchData();
             }
             else
             {
@@ -80,7 +80,7 @@ public class FirebaseManager : MonoBehaviour
 #endif
     }
 
-    private async Task InitializeFirebaseAsync()
+    private void InitializeFirebaseAndFetchData()
     {
         auth = FirebaseAuth.DefaultInstance;
         auth.StateChanged += AuthStateChanged;
@@ -98,8 +98,8 @@ public class FirebaseManager : MonoBehaviour
         firestore = FirebaseFirestore.DefaultInstance;
         storage = FirebaseStorage.DefaultInstance;
 
-        await FetchCourtsAsync();
-        await FetchPlayersInfoAsync();
+        _ =  FetchCourtsAsync();
+        _ = FetchPlayersInfoAsync();
     }
 
     private void AuthStateChanged(object sender, EventArgs eventArgs)
@@ -383,7 +383,7 @@ public class FirebaseManager : MonoBehaviour
             Directory.CreateDirectory(persistentCourtsPath);
         }
 
-        await query.GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        await query.GetSnapshotAsync().ContinueWithOnMainThread(async task =>
         {
             if (task.IsCanceled)
             {
@@ -420,7 +420,14 @@ public class FirebaseManager : MonoBehaviour
 
                     imagePath = Application.persistentDataPath + "/" + player["Image"].ToString();
 
-                    bool isImageDownloaded = File.Exists(imagePath);
+                    bool isImageDownloaded = false;
+                    FileInfo info = new FileInfo(imagePath);
+                    if (info.Exists)
+                    {
+                        StorageMetadata meta = await imageReference.GetMetadataAsync();
+                        if (meta.SizeBytes == info.Length)
+                            isImageDownloaded = true;
+                    }
                     if (!isImageDownloaded)
                     {
                         m_ProfilesListDownloaded.Add(false);
@@ -436,13 +443,11 @@ public class FirebaseManager : MonoBehaviour
                     m_ProfilesListDownloaded.Add(true);
                 }
 
-                int.TryParse(player["Rank"].ToString(), out int rank);
                 int.TryParse(player["Badges"].ToString(), out int badges);
                 int.TryParse(player["ActiveCourt"].ToString(), out int activeCourt);
-                bool.TryParse(player["IsMVP"].ToString(), out bool isMVP);
 
-                m_PlayerCardList.Add(new PlayerProfile(player["UserID"].ToString(), player["Name"].ToString(), imagePath, rank, badges, 
-                    isMVP, activeCourt, player["TeamPosition"].ToString(), player["CardTopColor"].ToString(), player["CardBottomColor"].ToString()));
+                m_PlayerCardList.Add(new PlayerProfile(player["UserID"].ToString(), player["Name"].ToString(), imagePath, playerIndex + 1, badges,
+                    playerIndex == 0, activeCourt, player["TeamPosition"].ToString(), player["CardTopColor"].ToString(), player["CardBottomColor"].ToString()));
 
                 playerIndex++;
 
@@ -591,6 +596,6 @@ public class FirebaseManager : MonoBehaviour
 
     public void DebugLog(string text)
     {
-        //GetComponentInChildren<TextMeshProUGUI>().text += text + "\n";
+        GetComponentInChildren<TextMeshProUGUI>().text += text + "\n";
     }
 }

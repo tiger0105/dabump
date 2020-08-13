@@ -51,19 +51,10 @@ public class PlayerInfo : MonoBehaviour
             if (i == 10)
                 break;
 
-            if (i == 0)
-            {
-                FirebaseManager.Instance.m_PlayerCardList[i].IsMVP = true;
-            }
-            else
-            {
-                FirebaseManager.Instance.m_PlayerCardList[i].IsMVP = false;
-            }
-
-            FirebaseManager.Instance.m_PlayerCardList[i].Rank = i + 1;
-
             if (PlayerPrefs.GetString("UserID", string.Empty) == FirebaseManager.Instance.m_PlayerCardList[i].UserID)
+            {
                 continue;
+            }
 
             GameObject topPlayer = Instantiate(m_RightPanel_TopPlayer_Prefab);
             topPlayer.transform.SetParent(m_RightPanel_TopPlayer_List, false);
