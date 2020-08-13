@@ -611,6 +611,6 @@ public class FirebaseManager : MonoBehaviour
 
     public void DebugLog(string text)
     {
-        GetComponentInChildren<TextMeshProUGUI>().text += text + "\n";
+        //GetComponentInChildren<TextMeshProUGUI>().text += text + "\n";
     }
 }

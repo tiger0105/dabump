@@ -40,11 +40,11 @@ namespace Michsky.UI.Frost
         {
             currentButton = buttons[currentPanelIndex];
             currentButtonAnimator = currentButton.GetComponent<Animator>();
-            currentButtonAnimator.Play(buttonFadeIn);
+            if (currentButtonAnimator != null) currentButtonAnimator.Play(buttonFadeIn);
 
             currentPanel = panels[currentPanelIndex];
             currentPanelAnimator = currentPanel.GetComponent<Animator>();
-            currentPanelAnimator.Play(panelFadeIn);
+            if (currentPanelAnimator != null) currentPanelAnimator.Play(panelFadeIn);
         }
 
         public void PanelAnim(int newPanel)
@@ -59,19 +59,19 @@ namespace Michsky.UI.Frost
                 currentPanelAnimator = currentPanel.GetComponent<Animator>();
                 nextPanelAnimator = nextPanel.GetComponent<Animator>();
 
-                currentPanelAnimator.Play(panelFadeOut);
-                nextPanelAnimator.Play(panelFadeIn);
+                if (currentPanelAnimator != null) currentPanelAnimator.Play(panelFadeOut);
+                if (nextPanelAnimator != null) nextPanelAnimator.Play(panelFadeIn);
 
                 currentButton = buttons[currentButtonlIndex];
 
                 currentButtonlIndex = newPanel;
                 nextButton = buttons[currentButtonlIndex];
 
-                currentButtonAnimator = currentButton.GetComponent<Animator>();
-                nextButtonAnimator = nextButton.GetComponent<Animator>();
+                if (currentButtonAnimator != null) currentButtonAnimator = currentButton.GetComponent<Animator>();
+                if (nextButtonAnimator != null) nextButtonAnimator = nextButton.GetComponent<Animator>();
 
-                currentButtonAnimator.Play(buttonFadeOut);
-                nextButtonAnimator.Play(buttonFadeIn);
+                if (currentButtonAnimator != null) currentButtonAnimator.Play(buttonFadeOut);
+                if (nextButtonAnimator != null) nextButtonAnimator.Play(buttonFadeIn);
             }
         }
     }

@@ -21,6 +21,7 @@ public class Profile : MonoBehaviour
     [SerializeField] private ToggleGroup m_Tab;
 
     [Header("Profile Tab")]
+    [SerializeField] private Animator m_ProfileTabAnimator;
     [SerializeField] public TMP_InputField m_NameInputField;
     [SerializeField] public HorizontalSelector m_TeamPositionSelector;
     [SerializeField] public Image m_TopColor;
@@ -80,6 +81,12 @@ public class Profile : MonoBehaviour
                 GetComponent<TopPanelManager>().PanelAnim(activeToggle.transform.GetSiblingIndex());
             }
         }
+    }
+
+    public void ActivateProfileTab()
+    {
+        m_Tab.transform.GetChild(0).GetComponent<Toggle>().isOn = true;
+        m_ProfileTabAnimator.Play("Panel In");
     }
 
     private void Start()
