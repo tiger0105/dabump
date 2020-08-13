@@ -132,8 +132,6 @@ public class FirebaseManager : MonoBehaviour
     {
         //StartCoroutine(Profile.Instance.GetProfileAsync());
 
-        Main.Instance.ShowLoginLoadingBar();
-
         GoogleSignIn.Configuration = configuration;
 #if UNITY_ANDROID && !UNITY_EDITOR
         GoogleSignIn.Configuration.UseGameSignIn = false;
@@ -172,6 +170,8 @@ public class FirebaseManager : MonoBehaviour
                 Main.Instance.HideLoginLoadingBar();
                 return;
             }
+
+            Main.Instance.ShowLoginLoadingBar();
 
             user = auth.CurrentUser;
 
@@ -216,6 +216,8 @@ public class FirebaseManager : MonoBehaviour
 
     private async Task FacebookAuth(string accessToken)
     {
+        Main.Instance.ShowLoginLoadingBar();
+
         Credential credential = FacebookAuthProvider.GetCredential(accessToken);
 
         await auth.SignInWithCredentialAsync(credential).ContinueWith(task =>
