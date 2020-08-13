@@ -22,6 +22,14 @@ public class PlayerInfo : MonoBehaviour
         Instance = this;
     }
 
+    private void Start()
+    {
+        GridLayoutGroup gridLayoutGroup = m_PlayerInfoListTransform.GetComponent<GridLayoutGroup>();
+        float space = m_PlayerInfoListTransform.GetComponent<RectTransform>().rect.width - 320 * 4;
+        gridLayoutGroup.padding.left = gridLayoutGroup.padding.right = (int)space / 5;
+        gridLayoutGroup.spacing = new Vector2((float)space / 5, gridLayoutGroup.spacing.y);
+    }
+
     public void BuildPlayerInfoList()
     {
         ClearPlayerInfoList();

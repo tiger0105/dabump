@@ -202,6 +202,12 @@ public class FirebaseManager : MonoBehaviour
 
     private void OnFacebookAuthenticationFinished(IResult result)
     {
+        if (result.Error.Length > 0 || result.Cancelled)
+        {
+            Main.Instance.HideLoginLoadingBar();
+            return;
+        }
+
         if (FB.IsLoggedIn)
         {
             _ = FacebookAuth(AccessToken.CurrentAccessToken.TokenString);
@@ -373,8 +379,9 @@ public class FirebaseManager : MonoBehaviour
     #region Players Information
     private async Task FetchPlayersInfoAsync()
     {
+        Debug.Log("FetchPlayersInfoAsync()");
         CollectionReference playersRef = firestore.Collection("Profiles");
-        Query query = playersRef.OrderBy("Rank");
+        Query query = playersRef.OrderBy("Badges");
 
         string persistentCourtsPath = Application.persistentDataPath + "/Profiles";
 
@@ -444,10 +451,10 @@ public class FirebaseManager : MonoBehaviour
                 }
 
                 int.TryParse(player["Badges"].ToString(), out int badges);
-                int.TryParse(player["ActiveCourt"].ToString(), out int activeCourt);
+                int.TryParse(player["CheckedInCourt"].ToString(), out int checkedInCourt);
 
                 m_PlayerCardList.Add(new PlayerProfile(player["UserID"].ToString(), player["Name"].ToString(), imagePath, playerIndex + 1, badges,
-                    playerIndex == 0, activeCourt, player["TeamPosition"].ToString(), player["CardTopColor"].ToString(), player["CardBottomColor"].ToString()));
+                    playerIndex == 0, checkedInCourt, player["VisitedCourts"].ToString(), player["TeamPosition"].ToString(), player["CardTopColor"].ToString(), player["CardBottomColor"].ToString()));
 
                 playerIndex++;
 

@@ -190,6 +190,7 @@ public class Profile : MonoBehaviour
     {
         m_LoadingBar.SetActive(true);
 
+        //string userId = PlayerPrefs.GetString("UserID", "xYTSdaejKPPgFIUXj9MhxtFZ4B03");
         string userId = PlayerPrefs.GetString("UserID", string.Empty);
         string userName = PlayerPrefs.GetString("UserName", string.Empty);
         if (userId == string.Empty)
@@ -229,7 +230,9 @@ public class Profile : MonoBehaviour
             m_CardName.color = SetInvertedColor(m_CardTopColor.color);
             m_CardPosition.text = m_TeamPositionSelector.elements[index];
             m_CardPosition.color = SetInvertedColor(m_CardBottomColor.color);
-            int rank = FirebaseManager.Instance.m_PlayerCardList.FirstOrDefault(item => item.UserID == userId).Rank;
+            int rank = 0;
+            if (FirebaseManager.Instance.m_CourtList.Count > 0)
+                rank = FirebaseManager.Instance.m_PlayerCardList.FirstOrDefault(item => item.UserID == userId).Rank;
             m_CardRank.text = rank == 0 ? "Rank NA" : ("Rank " + rank);
             
             if (playerProfile.Image.Length > 0)

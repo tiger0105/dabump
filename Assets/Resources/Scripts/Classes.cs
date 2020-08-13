@@ -37,13 +37,14 @@ public class PlayerProfile
     public int Rank;
     public int Badges;
     public bool IsMVP;
-    public int ActiveCourt;
+    public int CheckedInCourt;
+    public string VisitedCourts;
     public string TeamPosition;
     public string CardTopColor;
     public string CardBottomColor;
 
     public PlayerProfile(string userId = "", string name = "", string image = "", int rank = 0, int badges = 0,
-        bool isMVP = false, int activeCourt = 0, string teamPosition = "", string cardTopColor = "000000", string cardBottomColor = "000000")
+        bool isMVP = false, int checkedInCourt = 0, string visitedCourts = "", string teamPosition = "", string cardTopColor = "000000", string cardBottomColor = "000000")
     {
         UserID = userId;
         Name = name;
@@ -51,7 +52,8 @@ public class PlayerProfile
         Rank = rank;
         Badges = badges;
         IsMVP = isMVP;
-        ActiveCourt = activeCourt;
+        CheckedInCourt = checkedInCourt;
+        VisitedCourts = visitedCourts;
         TeamPosition = teamPosition;
         CardTopColor = cardTopColor;
         CardBottomColor = cardBottomColor;
