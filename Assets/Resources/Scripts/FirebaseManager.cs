@@ -65,7 +65,7 @@ public class FirebaseManager : MonoBehaviour
 #if UNITY_EDITOR
         InitializeFirebaseAndFetchData();
 #else
-        FirebaseApp.CheckAndFixDependenciesAsync().ContinueWithOnMainThread(task =>
+        FirebaseApp.CheckAndFixDependenciesAsync().ContinueWith(task =>
         {
             dependencyStatus = task.Result;
             if (dependencyStatus == DependencyStatus.Available)
