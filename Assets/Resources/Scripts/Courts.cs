@@ -18,6 +18,8 @@ public class Courts : MonoBehaviour
     [SerializeField] private ScrollRect m_CourtScrollRect;
     [SerializeField] private Transform m_CourtListTransform;
 
+    [SerializeField] private GameObject m_CourtDetailPanel;
+
     [SerializeField] private List<Sprite> m_BadgeIcons;
 
     private void Awake()
@@ -60,6 +62,9 @@ public class Courts : MonoBehaviour
         GameObject card = Instantiate(m_CourtCardPrefab);
         card.transform.SetParent(m_CourtListTransform, false);
         card.name = name;
+        Button cardButton = card.transform.GetChild(1).GetComponent<Button>();
+        cardButton.onClick.RemoveAllListeners();
+        cardButton.onClick.AddListener(delegate { ShowCourtDetailPanel(id); });
         card.transform.GetChild(1).GetChild(1).GetComponent<TextMeshProUGUI>().text = name;
         card.transform.GetChild(1).GetChild(2).GetComponent<TextMeshProUGUI>().text = address;
         string playersList = string.Empty;
@@ -81,6 +86,11 @@ public class Courts : MonoBehaviour
         card.transform.GetChild(1).GetChild(5).GetComponent<Image>().sprite = m_BadgeIcons[id - 1];
 
         SetCourtImage(id, imagePath);
+    }
+
+    private void ShowCourtDetailPanel(int courtId)
+    {
+        m_CourtDetailPanel.SetActive(true);
     }
 
     public void SetCourtImage(int id, string imagePath)

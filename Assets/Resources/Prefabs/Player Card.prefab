@@ -393,7 +393,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Texture: {fileID: 2800000, guid: 8b0fb205590e02249827bdc40f38a852, type: 3}
+  m_Texture: {fileID: 2800000, guid: fdfcaa61ca7136449b5c1c97d6400944, type: 3}
   m_UVRect:
     serializedVersion: 2
     x: 0
@@ -412,8 +412,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86710e43de46f6f4bac7c8e50813a599, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_AspectMode: 4
-  m_AspectRatio: 0.8
+  m_AspectMode: 3
+  m_AspectRatio: 1
 --- !u!1 &492130131811111505
 GameObject:
   m_ObjectHideFlags: 0
@@ -936,7 +936,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0.21960784, b: 0.3647059, a: 1}
   m_RaycastTarget: 1
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -964,7 +964,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 31a19414c41e5ae4aae2af33fee712f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_ShowMaskGraphic: 0
+  m_ShowMaskGraphic: 1
 --- !u!1 &493018266127933478
 GameObject:
   m_ObjectHideFlags: 0
