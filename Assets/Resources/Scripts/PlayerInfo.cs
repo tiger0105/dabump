@@ -98,6 +98,7 @@ public class PlayerInfo : MonoBehaviour
         Texture2D texture = new Texture2D(296, 370);
         texture.LoadImage(imageBytes);
         float aspectRatio = (float)texture.width / texture.height;
+        image.GetComponent<AspectRatioFitter>().aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
         image.GetComponent<AspectRatioFitter>().aspectRatio = aspectRatio;
         image.texture = texture;
     }

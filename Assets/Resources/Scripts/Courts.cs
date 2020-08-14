@@ -1,5 +1,6 @@
 ﻿using Firebase.Extensions;
 using Firebase.Firestore;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -35,6 +36,9 @@ public class Courts : MonoBehaviour
     [SerializeField] private TMP_Dropdown m_CourtDetail_PlayerStatus;
     [SerializeField] private Button m_CourtDetail_CheckInButton;
 
+    [SerializeField] private GameObject m_LocationServiceFailedPopup;
+    [SerializeField] private TextMeshProUGUI m_LocationServiceFailedPopup_MessageText;
+
     [SerializeField] private List<Sprite> m_BadgeIcons;
 
     private void Awake()
@@ -45,6 +49,92 @@ public class Courts : MonoBehaviour
     private void Start()
     {
         BuildCourtsList();
+    }
+
+    private IEnumerator StartLocationServiceAndCheckIn(int courtId)
+    {
+        if (!Input.location.isEnabledByUser)
+            yield break;
+
+        Input.location.Start(10, 0.1f);
+
+        int maxWait = 20;
+        while (Input.location.status == LocationServiceStatus.Initializing && maxWait > 0)
+        {
+            yield return new WaitForSeconds(1);
+            maxWait--;
+        }
+
+        if (maxWait < 1)
+        {
+            m_LocationServiceFailedPopup.GetComponent<Animator>().Play("Modal Window In");
+            m_LocationServiceFailedPopup_MessageText.text = "Location service initializing Timed out. Please try again later.";
+            yield break;
+        }
+
+        if (Input.location.status == LocationServiceStatus.Failed)
+        {
+            m_LocationServiceFailedPopup.GetComponent<Animator>().Play("Modal Window In");
+            m_LocationServiceFailedPopup_MessageText.text = "Unable to determine your location. Please try again later.";
+            yield break;
+        }
+        else
+        {
+            double latitude = Input.location.lastData.latitude;
+            double longitude = Input.location.lastData.longitude;
+            double distance = DistanceInKmBetweenEarthCoordinates(latitude, longitude, FirebaseManager.Instance.m_CourtList[courtId - 1].Location.Latitude, FirebaseManager.Instance.m_CourtList[courtId - 1].Location.Longitude);
+            if (distance < 0.1f)
+            {
+                string userId = PlayerPrefs.GetString("UserID", string.Empty);
+                if (userId == string.Empty)
+                {
+                    yield break;
+                }
+
+                PlayerProfile myProfile = FirebaseManager.Instance.m_PlayerCardList.FirstOrDefault(item => item.UserID == userId);
+                myProfile.CheckedInCourt = courtId;
+                myProfile.Badges += 1;
+                string courts = myProfile.VisitedCourts;
+                List<int> visitedCourts = new List<int>();
+                if (courts.Length > 0)
+                {
+                    visitedCourts = courts.Split(',').Select(int.Parse).ToList();
+                }
+                visitedCourts.Add(courtId);
+                visitedCourts = visitedCourts.Distinct().ToList();
+                myProfile.VisitedCourts = string.Join(",", visitedCourts.ToArray());
+                myProfile.Status = m_CourtDetail_PlayerStatus.options[m_CourtDetail_PlayerStatus.value].text;
+                _ = FirebaseManager.Instance.SetCheckInCourtAsync(myProfile);
+            }
+            else
+            {
+                m_LocationServiceFailedPopup.GetComponent<Animator>().Play("Modal Window In");
+                m_LocationServiceFailedPopup_MessageText.text = "You can't check-in, you are not in the " + FirebaseManager.Instance.m_CourtList[courtId - 1].Name;
+            }
+        }
+
+        Input.location.Stop();
+    }
+
+    private double DegreesToRadians(double degrees)
+    {
+        return degrees * Mathf.PI / 180;
+    }
+
+    double DistanceInKmBetweenEarthCoordinates(double lat1, double long1, double lat2, double long2)
+    {
+        double earthRadiusKm = 6378.14f;
+
+        double dLat = DegreesToRadians(lat2 - lat1);
+        double dLon = DegreesToRadians(long2 - long1);
+
+        lat1 = DegreesToRadians(lat1);
+        lat2 = DegreesToRadians(lat2);
+
+        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                Math.Sin(dLon / 2) * Math.Sin(dLon / 2) * Math.Cos(lat1) * Math.Cos(lat2);
+        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+        return earthRadiusKm * c;
     }
 
     private void BuildCourtsList()
@@ -164,61 +254,73 @@ public class Courts : MonoBehaviour
                 playerItem.transform.GetChild(0).GetChild(1).GetChild(1).GetComponent<TextMeshProUGUI>().text = profile.TeamPosition;
                 playerItem.transform.GetChild(0).GetChild(1).GetChild(2).GetChild(0).GetChild(2).GetComponent<TextMeshProUGUI>().text = profile.Badges == 0 ? "Not Available" : profile.Badges.ToString();
                 playerItem.transform.GetChild(0).GetChild(1).GetChild(2).GetChild(1).GetComponent<TextMeshProUGUI>().text = profile.Rank == 0 ? "RANK NA" : "Rank " + profile.Rank;
+                playerItem.transform.GetChild(0).GetChild(1).GetChild(2).GetChild(2).GetComponent<TextMeshProUGUI>().text = profile.Status;
                 playerItem.transform.GetChild(0).GetChild(1).GetChild(2).GetChild(3).gameObject.SetActive(profile.IsMVP);
             }
         }
 
-        if (AppData._PlayerProfile.Image.Length > 0)
+        string userId = PlayerPrefs.GetString("UserID", string.Empty);
+        PlayerProfile myProfile = FirebaseManager.Instance.m_PlayerCardList.FirstOrDefault(item => item.UserID == userId);
+        if (myProfile != null)
         {
-            FileInfo playerImageFI = new FileInfo(AppData._PlayerProfile.Image);
-            if (playerImageFI.Exists)
+            if (myProfile.Image.Length > 0)
             {
-                MemoryStream dest = new MemoryStream();
-
-                using (Stream source = playerImageFI.OpenRead())
+                FileInfo playerImageFI = new FileInfo(myProfile.Image);
+                if (playerImageFI.Exists)
                 {
-                    byte[] buffer = new byte[2048];
-                    int bytesRead;
-                    while ((bytesRead = source.Read(buffer, 0, buffer.Length)) > 0)
+                    MemoryStream dest = new MemoryStream();
+
+                    using (Stream source = playerImageFI.OpenRead())
                     {
-                        dest.Write(buffer, 0, bytesRead);
+                        byte[] buffer = new byte[2048];
+                        int bytesRead;
+                        while ((bytesRead = source.Read(buffer, 0, buffer.Length)) > 0)
+                        {
+                            dest.Write(buffer, 0, bytesRead);
+                        }
                     }
+
+                    byte[] imageBytes = dest.ToArray();
+
+                    Texture2D texture = new Texture2D(500, 500);
+                    texture.LoadImage(imageBytes);
+                    m_CourtDetail_PlayerImage.GetComponent<RawImage>().texture = texture;
+                    m_CourtDetail_PlayerImage.GetComponent<AspectRatioFitter>().aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+                    m_CourtDetail_PlayerImage.GetComponent<AspectRatioFitter>().aspectRatio = (float)texture.width / texture.height;
                 }
-
-                byte[] imageBytes = dest.ToArray();
-
-                Texture2D texture = new Texture2D(500, 500);
-                texture.LoadImage(imageBytes);
-                m_CourtDetail_PlayerImage.GetComponent<RawImage>().texture = texture;
-                m_CourtDetail_PlayerImage.GetComponent<AspectRatioFitter>().aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
-                m_CourtDetail_PlayerImage.GetComponent<AspectRatioFitter>().aspectRatio = (float)texture.width / texture.height;
             }
-        }
-        m_CourtDetail_PlayerName.text = AppData._PlayerProfile.Name;
-        m_CourtDetail_PlayerPosition.text = AppData._PlayerProfile.TeamPosition;
-        m_CourtDetail_PlayerBadges.text = AppData._PlayerProfile.Badges == 0 ? "Not Available" : AppData._PlayerProfile.Badges.ToString();
-        m_CourtDetail_PlayerRank.text = AppData._PlayerProfile.Rank == 0 ? "Rank NA" : "Rank " + AppData._PlayerProfile.Rank;
-        m_CourtDetail_PlayerMVP.SetActive(AppData._PlayerProfile.IsMVP);
+            m_CourtDetail_PlayerName.text = myProfile.Name;
+            m_CourtDetail_PlayerPosition.text = myProfile.TeamPosition;
+            m_CourtDetail_PlayerBadges.text = myProfile.Badges == 0 ? "Not Available" : myProfile.Badges.ToString();
+            m_CourtDetail_PlayerRank.text = myProfile.Rank == 0 ? "Rank NA" : "Rank " + myProfile.Rank;
+            m_CourtDetail_PlayerMVP.SetActive(myProfile.IsMVP);
 
-        if (AppData._PlayerProfile.CheckedInCourt == courtId)
-        {
-            m_CourtDetail_CheckInButton.GetComponent<CanvasGroup>().alpha = 0.3f;
-            m_CourtDetail_CheckInButton.GetComponent<CanvasGroup>().interactable = false;
-            m_CourtDetail_CheckInButton.GetComponent<CanvasGroup>().blocksRaycasts = false;
-        }
-        else
-        {
-            m_CourtDetail_CheckInButton.GetComponent<CanvasGroup>().alpha = 1;
-            m_CourtDetail_CheckInButton.GetComponent<CanvasGroup>().interactable = true;
-            m_CourtDetail_CheckInButton.GetComponent<CanvasGroup>().blocksRaycasts = true;
+            m_CourtDetail_CheckInButton.GetComponent<Button>().onClick.RemoveAllListeners();
+            m_CourtDetail_CheckInButton.GetComponent<Button>().onClick.AddListener(delegate
+            {
+                CheckIn(courtId);
+            });
+
+            if (myProfile.CheckedInCourt == courtId)
+            {
+                m_CourtDetail_CheckInButton.GetComponent<CanvasGroup>().alpha = 0.3f;
+                m_CourtDetail_CheckInButton.GetComponent<CanvasGroup>().interactable = false;
+                m_CourtDetail_CheckInButton.GetComponent<CanvasGroup>().blocksRaycasts = false;
+            }
+            else
+            {
+                m_CourtDetail_CheckInButton.GetComponent<CanvasGroup>().alpha = 1;
+                m_CourtDetail_CheckInButton.GetComponent<CanvasGroup>().interactable = true;
+                m_CourtDetail_CheckInButton.GetComponent<CanvasGroup>().blocksRaycasts = true;
+            }
         }
 
         m_CourtDetailPanel.SetActive(true);
     }
 
-    public void CheckIn()
+    private void CheckIn(int courtId)
     {
-
+        StartCoroutine(StartLocationServiceAndCheckIn(courtId));
     }
 
     public void SetCourtImage(int id, string imagePath)
@@ -261,25 +363,51 @@ public class Courts : MonoBehaviour
         m_CourtScrollRect.GetComponent<UI_ScrollRectOcclusion>().Init();
     }
 
-    private async Task SetCheckInCourt(FirebaseFirestore firestore)
+    public void CourtCheckedIn(int courtId)
     {
-        string userId = PlayerPrefs.GetString("UserID", string.Empty);
-        if (userId == string.Empty)
-        {
-            return;
-        }
+        //string userId = PlayerPrefs.GetString("UserID", string.Empty);
+        //PlayerProfile myProfile = FirebaseManager.Instance.m_PlayerCardList.FirstOrDefault(item => item.UserID == userId);
+        //if (myProfile != null)
+        //{
+        //    GameObject playerItem = Instantiate(m_CourtDetail_PlayerListItemPrefab);
+        //    playerItem.transform.SetParent(m_CourtDetail_PlayerList, false);
+        //    playerItem.name = myProfile.Name;
+        //    if (myProfile.Image.Length > 0)
+        //    {
+        //        FileInfo fileInfo = new FileInfo(myProfile.Image);
+        //        if (fileInfo.Exists)
+        //        {
+        //            MemoryStream dest = new MemoryStream();
 
-        int[] courts = { 1, 2, 3, 4 };
+        //            using (Stream source = fileInfo.OpenRead())
+        //            {
+        //                byte[] buffer = new byte[2048];
+        //                int bytesRead;
+        //                while ((bytesRead = source.Read(buffer, 0, buffer.Length)) > 0)
+        //                {
+        //                    dest.Write(buffer, 0, bytesRead);
+        //                }
+        //            }
 
-        DocumentReference documentReference = firestore.Collection("Profiles").Document(userId);
-        Dictionary<string, object> profile = new Dictionary<string, object>
-        {
-            ["Courts"] = courts,
-        };
+        //            byte[] imageBytes = dest.ToArray();
 
-        await documentReference.SetAsync(profile).ContinueWithOnMainThread(task =>
-        {
-            Debug.Log("SetCheckInCourt Completed");
-        });
+        //            Texture2D texture = new Texture2D(300, 300);
+        //            texture.LoadImage(imageBytes);
+        //            playerItem.transform.GetChild(0).GetChild(0).GetChild(0).GetComponent<RawImage>().texture = texture;
+        //            playerItem.transform.GetChild(0).GetChild(0).GetChild(0).GetComponent<AspectRatioFitter>().aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+        //            playerItem.transform.GetChild(0).GetChild(0).GetChild(0).GetComponent<AspectRatioFitter>().aspectRatio = (float)texture.width / texture.height;
+        //        }
+        //    }
+        //    playerItem.transform.GetChild(0).GetChild(1).GetChild(0).GetComponent<TextMeshProUGUI>().text = myProfile.Name;
+        //    playerItem.transform.GetChild(0).GetChild(1).GetChild(1).GetComponent<TextMeshProUGUI>().text = myProfile.TeamPosition;
+        //    playerItem.transform.GetChild(0).GetChild(1).GetChild(2).GetChild(0).GetChild(2).GetComponent<TextMeshProUGUI>().text = myProfile.Badges == 0 ? "Not Available" : myProfile.Badges.ToString();
+        //    playerItem.transform.GetChild(0).GetChild(1).GetChild(2).GetChild(1).GetComponent<TextMeshProUGUI>().text = myProfile.Rank == 0 ? "RANK NA" : "Rank " + myProfile.Rank;
+        //    playerItem.transform.GetChild(0).GetChild(1).GetChild(2).GetChild(2).GetComponent<TextMeshProUGUI>().text = myProfile.Status;
+        //    playerItem.transform.GetChild(0).GetChild(1).GetChild(2).GetChild(3).gameObject.SetActive(myProfile.IsMVP);
+        //}
+
+        //m_CourtDetail_CheckInButton.GetComponent<CanvasGroup>().alpha = 0.3f;
+        //m_CourtDetail_CheckInButton.GetComponent<CanvasGroup>().interactable = false;
+        //m_CourtDetail_CheckInButton.GetComponent<CanvasGroup>().blocksRaycasts = false;
     }
 }

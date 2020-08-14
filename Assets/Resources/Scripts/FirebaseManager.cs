@@ -183,8 +183,6 @@ public class FirebaseManager : MonoBehaviour
 
             StartCoroutine(Profile.Instance.GetProfileAsync());
         });
-
-        Main.Instance.HideLoginLoadingBar();
     }
     #endregion
 
@@ -244,11 +242,7 @@ public class FirebaseManager : MonoBehaviour
             PlayerPrefs.SetInt("IsLoggedIn", 1);
 
             StartCoroutine(Profile.Instance.GetProfileAsync());
-
-            Main.Instance.HideLoginLoadingBar();
         });
-
-        Main.Instance.HideLoginLoadingBar();
     }
 
     private void InitCallback()
@@ -338,7 +332,9 @@ public class FirebaseManager : MonoBehaviour
                     m_CourtsListDownloaded.Add(true);
                 }
 
-                m_CourtList.Add(new Court(imageID, court["Name"].ToString(), court["Address"].ToString(), imagePath));
+                GeoPoint location = (GeoPoint)court["Location"];
+
+                m_CourtList.Add(new Court(location, imageID, court["Name"].ToString(), court["Address"].ToString(), imagePath));
 
                 if (m_CourtsListDownloaded.Count == m_CourtsListCount)
                     VerifyCourtsListDownloadProgressCompleted();
@@ -598,6 +594,22 @@ public class FirebaseManager : MonoBehaviour
         });
 
         return isUploaded;
+    }
+
+    public async Task SetCheckInCourtAsync(PlayerProfile myProfile)
+    {
+        DocumentReference documentReference = firestore.Collection("Profiles").Document(myProfile.UserID);
+        Dictionary<string, object> profile = new Dictionary<string, object>
+        {
+            ["CheckedInCourt"] = myProfile.CheckedInCourt,
+            ["Badges"] = myProfile.Badges, 
+            ["VisitedCourts"] = myProfile.VisitedCourts,
+            ["Status"] = myProfile.Status,
+        };
+
+        await documentReference.UpdateAsync(profile);
+
+        Courts.Instance.CourtCheckedIn(myProfile.CheckedInCourt);
     }
 
     public void DebugLog(string text)

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Firebase.Firestore;
+using System;
 using System.Collections.Generic;
 
 [Serializable]
@@ -8,19 +9,16 @@ public class Court
     public string Name;
     public string Address;
     public string ImagePath;
-    public bool IsCheckedIn;
-    public bool HasBadge;
     public List<string> CheckedInPlayers;
+    public GeoPoint Location;
 
-    public Court(int id = 0, string name = "", string address = "", string imagePath = "", 
-        bool isCheckedIn = false, bool hasBadge = false, List<string> checkedInPlayers = null)
+    public Court(GeoPoint location, int id = 0, string name = "", string address = "", string imagePath = "", List<string> checkedInPlayers = null)
     {
+        Location = location;
         ID = id;
         Name = name;
         Address = address;
         ImagePath = imagePath;
-        IsCheckedIn = isCheckedIn;
-        HasBadge = hasBadge;
         if (checkedInPlayers == null)
             CheckedInPlayers = new List<string>();
         else
