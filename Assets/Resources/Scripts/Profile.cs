@@ -216,6 +216,7 @@ public class Profile : MonoBehaviour
             }
 
             PlayerProfile playerProfile = JsonUtility.FromJson<PlayerProfile>(www.downloadHandler.text);
+            AppData._PlayerProfile = playerProfile;
 
             ColorUtility.TryParseHtmlString("#" + playerProfile.CardTopColor, out Color topColor);
             m_CardTopColor.color = topColor;
