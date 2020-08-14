@@ -56,7 +56,7 @@ public class FirebaseManager : MonoBehaviour
 
     private void Start()
     {
-        //PlayerPrefs.SetString("UserID", "xYTSdaejKPPgFIUXj9MhxtFZ4B03");
+        //PlayerPrefs.SetString("UserID", "RHxbh06ZuVSB0vgHjnJ4q8iLamm2");
 
         m_CourtList = new List<Court>();
         m_PlayerCardList = new List<PlayerProfile>();
@@ -198,7 +198,7 @@ public class FirebaseManager : MonoBehaviour
 
     private void OnFacebookAuthenticationFinished(IResult result)
     {
-        if (result.Cancelled || result.Error.Length > 0)
+        if (result.Cancelled)
         {
             Main.Instance.HideLoginLoadingBar();
             return;
