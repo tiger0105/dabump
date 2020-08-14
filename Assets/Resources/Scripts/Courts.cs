@@ -528,9 +528,9 @@ public class Courts : MonoBehaviour
         yield return new WaitForEndOfFrame();
         BuildCourtsList();
         yield return new WaitForEndOfFrame();
-        BuildRecentlyVisitedCourtsList();
-        yield return new WaitForEndOfFrame();
         Profile.Instance.SetCourtCheckedInAndBadgeStatus(myProfile);
+        yield return new WaitForEndOfFrame();
+        BuildRecentlyVisitedCourtsList();
         yield return new WaitForEndOfFrame();
         ShowCourtDetailPanel(myProfile.CheckedInCourt);
         yield return new WaitForEndOfFrame();
