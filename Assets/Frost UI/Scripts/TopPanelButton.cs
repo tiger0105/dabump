@@ -3,7 +3,7 @@ using UnityEngine.EventSystems;
 
 namespace Michsky.UI.Frost
 {
-    public class TopPanelButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    public class TopPanelButton : MonoBehaviour, IPointerDownHandler, IPointerExitHandler
     {
         private Animator buttonAnimator;
 
@@ -12,7 +12,7 @@ namespace Michsky.UI.Frost
             buttonAnimator = this.GetComponent<Animator>();
         }
 
-        public void OnPointerEnter(PointerEventData eventData)
+        public void OnPointerDown(PointerEventData eventData)
         {
             if (buttonAnimator.GetCurrentAnimatorStateInfo(0).IsName("Hover to Pressed"))
             {

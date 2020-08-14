@@ -607,6 +607,8 @@ public class FirebaseManager : MonoBehaviour
         await documentReference.UpdateAsync(profile);
 
         Courts.Instance.CourtCheckedIn(myProfile.CheckedInCourt);
+
+        Courts.Instance.m_CourtDetail_LoadingBar.SetActive(false);
     }
 
     public void DebugLog(string text)

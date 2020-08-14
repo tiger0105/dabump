@@ -26,8 +26,11 @@ public class Courts : MonoBehaviour
     [SerializeField] private Image m_CourtDetail_Badge;
     [SerializeField] private TextMeshProUGUI m_CourtDetail_Name;
     [SerializeField] private TextMeshProUGUI m_CourtDetail_Address;
+
     [SerializeField] private Transform m_CourtDetail_PlayerList;
     [SerializeField] private GameObject m_CourtDetail_PlayerListItemPrefab;
+    [SerializeField] private GameObject m_CourtDetail_NoPlayersMessage;
+
     [SerializeField] private Transform m_CourtDetail_PlayerImage;
     [SerializeField] private TextMeshProUGUI m_CourtDetail_PlayerName;
     [SerializeField] private TextMeshProUGUI m_CourtDetail_PlayerPosition;
@@ -36,6 +39,8 @@ public class Courts : MonoBehaviour
     [SerializeField] private GameObject m_CourtDetail_PlayerMVP;
     [SerializeField] private TMP_Dropdown m_CourtDetail_PlayerStatus;
     [SerializeField] private Button m_CourtDetail_CheckInButton;
+
+    [SerializeField] public GameObject m_CourtDetail_LoadingBar;
 
     [SerializeField] private GameObject m_LocationServiceFailedPopup;
     [SerializeField] private TextMeshProUGUI m_LocationServiceFailedPopup_MessageText;
@@ -55,7 +60,12 @@ public class Courts : MonoBehaviour
     private IEnumerator StartLocationServiceAndCheckIn(int courtId)
     {
         if (!Input.location.isEnabledByUser)
+        {
+            m_CourtDetail_LoadingBar.SetActive(false);
+            m_LocationServiceFailedPopup.GetComponent<Animator>().Play("Modal Window In");
+            m_LocationServiceFailedPopup_MessageText.text = "Location service is not enabled. Please enable it and restart the app.";
             yield break;
+        }
 
         Input.location.Start(10, 0.1f);
 
@@ -68,6 +78,7 @@ public class Courts : MonoBehaviour
 
         if (maxWait < 1)
         {
+            m_CourtDetail_LoadingBar.SetActive(false);
             m_LocationServiceFailedPopup.GetComponent<Animator>().Play("Modal Window In");
             m_LocationServiceFailedPopup_MessageText.text = "Location service initializing Timed out. Please try again later.";
             yield break;
@@ -75,6 +86,7 @@ public class Courts : MonoBehaviour
 
         if (Input.location.status == LocationServiceStatus.Failed)
         {
+            m_CourtDetail_LoadingBar.SetActive(false);
             m_LocationServiceFailedPopup.GetComponent<Animator>().Play("Modal Window In");
             m_LocationServiceFailedPopup_MessageText.text = "Unable to determine your location. Please try again later.";
             yield break;
@@ -89,6 +101,7 @@ public class Courts : MonoBehaviour
                 string userId = PlayerPrefs.GetString("UserID", string.Empty);
                 if (userId == string.Empty)
                 {
+                    m_CourtDetail_LoadingBar.SetActive(false);
                     yield break;
                 }
 
@@ -111,12 +124,14 @@ public class Courts : MonoBehaviour
                 }
                 else
                 {
+                    m_CourtDetail_LoadingBar.SetActive(false);
                     m_LocationServiceFailedPopup.GetComponent<Animator>().Play("Modal Window In");
                     m_LocationServiceFailedPopup_MessageText.text = "Unexpected error occured. Please restart the application.";
                 }
             }
             else
             {
+                m_CourtDetail_LoadingBar.SetActive(false);
                 m_LocationServiceFailedPopup.GetComponent<Animator>().Play("Modal Window In");
                 m_LocationServiceFailedPopup_MessageText.text = "You can't check-in, you are not in the " + FirebaseManager.Instance.m_CourtList[courtId - 1].Name;
             }
@@ -170,7 +185,6 @@ public class Courts : MonoBehaviour
         if (myProfile != null)
         {
             string courts = myProfile.VisitedCourts;
-            Debug.Log(courts);
             List<int> visitedCourts = new List<int>();
             if (courts.Length > 0)
             {
@@ -375,11 +389,22 @@ public class Courts : MonoBehaviour
             }
         }
 
+        if (m_CourtDetail_PlayerList.childCount > 0)
+        {
+            m_CourtDetail_NoPlayersMessage.SetActive(false);
+        }
+        else
+        {
+            m_CourtDetail_NoPlayersMessage.SetActive(true);
+        }
+
         m_CourtDetailPanel.SetActive(true);
     }
 
     private void CheckIn(int courtId)
     {
+        m_CourtDetail_LoadingBar.SetActive(true);
+
         StartCoroutine(StartLocationServiceAndCheckIn(courtId));
     }
 
