@@ -223,13 +223,11 @@ public class FirebaseManager : MonoBehaviour
             if (task.IsCanceled)
             {
                 Main.Instance.HideLoginLoadingBar();
-                Debug.Log("SignInWithCredentialAsync was canceled.");
                 return;
             }
             if (task.IsFaulted)
             {
                 Main.Instance.HideLoginLoadingBar();
-                Debug.Log("SignInWithCredentialAsync encountered an error: " + task.Exception);
                 return;
             }
 
@@ -258,13 +256,11 @@ public class FirebaseManager : MonoBehaviour
             else
             {
                 if (Main.Instance != null) Main.Instance.HideLoginLoadingBar();
-                Debug.Log("User not yet loged FB or loged out");
             }
         }
         else
         { 
             if (Main.Instance != null) Main.Instance.HideLoginLoadingBar();
-            Debug.Log("User cancelled login");
         }
     }
 
@@ -298,12 +294,11 @@ public class FirebaseManager : MonoBehaviour
         {
             if (task.IsCanceled)
             {
-                Debug.Log("FetchCourtsAsync() -> query.GetSnapshotAsync() was canceled.");
                 return;
             }
+            
             if (task.IsFaulted)
             {
-                Debug.Log("FetchCourtsAsync() -> query.GetSnapshotAsync() encountered an error: " + task.Exception);
                 return;
             }
 

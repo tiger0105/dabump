@@ -1,15 +1,13 @@
-﻿using Firebase.Extensions;
-using Firebase.Firestore;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.UI.Extensions;
+using static TMPro.TMP_Dropdown;
 
 public class Courts : MonoBehaviour
 {
@@ -18,6 +16,9 @@ public class Courts : MonoBehaviour
     [SerializeField] private GameObject m_CourtCardPrefab;
     [SerializeField] private ScrollRect m_CourtScrollRect;
     [SerializeField] private Transform m_CourtListTransform;
+
+    [SerializeField] private ScrollRect m_RecentlyVisitedCourts_ScrollRect;
+    [SerializeField] private Transform m_RecentlyVisitedCourts_ListTransform;
 
     [SerializeField] private GameObject m_CourtDetailPanel;
     [SerializeField] private Transform m_CourtDetail_Image;
@@ -92,19 +93,27 @@ public class Courts : MonoBehaviour
                 }
 
                 PlayerProfile myProfile = FirebaseManager.Instance.m_PlayerCardList.FirstOrDefault(item => item.UserID == userId);
-                myProfile.CheckedInCourt = courtId;
-                myProfile.Badges += 1;
-                string courts = myProfile.VisitedCourts;
-                List<int> visitedCourts = new List<int>();
-                if (courts.Length > 0)
+                if (myProfile != null)
                 {
-                    visitedCourts = courts.Split(',').Select(int.Parse).ToList();
+                    myProfile.CheckedInCourt = courtId;
+                    string courts = myProfile.VisitedCourts;
+                    List<int> visitedCourts = new List<int>();
+                    if (courts.Length > 0)
+                    {
+                        visitedCourts = courts.Split(',').Select(int.Parse).ToList();
+                    }
+                    visitedCourts.Add(courtId);
+                    visitedCourts = visitedCourts.Distinct().ToList();
+                    myProfile.VisitedCourts = string.Join(",", visitedCourts.ToArray());
+                    myProfile.Badges = visitedCourts.Count;
+                    myProfile.Status = m_CourtDetail_PlayerStatus.options[m_CourtDetail_PlayerStatus.value].text;
+                    _ = FirebaseManager.Instance.SetCheckInCourtAsync(myProfile);
                 }
-                visitedCourts.Add(courtId);
-                visitedCourts = visitedCourts.Distinct().ToList();
-                myProfile.VisitedCourts = string.Join(",", visitedCourts.ToArray());
-                myProfile.Status = m_CourtDetail_PlayerStatus.options[m_CourtDetail_PlayerStatus.value].text;
-                _ = FirebaseManager.Instance.SetCheckInCourtAsync(myProfile);
+                else
+                {
+                    m_LocationServiceFailedPopup.GetComponent<Animator>().Play("Modal Window In");
+                    m_LocationServiceFailedPopup_MessageText.text = "Unexpected error occured. Please restart the application.";
+                }
             }
             else
             {
@@ -191,6 +200,24 @@ public class Courts : MonoBehaviour
         card.transform.GetChild(1).GetChild(5).GetComponent<Image>().sprite = m_BadgeIcons[id - 1];
 
         SetCourtImage(id, imagePath);
+
+        string userId = PlayerPrefs.GetString("UserID", string.Empty);
+        PlayerProfile myProfile = FirebaseManager.Instance.m_PlayerCardList.FirstOrDefault(item => item.UserID == userId);
+        if (myProfile != null)
+        {
+            string courts = myProfile.VisitedCourts;
+            List<int> visitedCourts = new List<int>();
+            if (courts.Length > 0)
+            {
+                visitedCourts = courts.Split(',').Select(int.Parse).ToList();
+            }
+            if (visitedCourts.Contains(id))
+            {
+                GameObject visitedCard = Instantiate(card);
+                visitedCard.transform.SetParent(m_RecentlyVisitedCourts_ListTransform, false);
+                visitedCard.name = name;
+            }
+        }
     }
 
     private void ShowCourtDetailPanel(int courtId)
@@ -294,6 +321,11 @@ public class Courts : MonoBehaviour
             m_CourtDetail_PlayerBadges.text = myProfile.Badges == 0 ? "Not Available" : myProfile.Badges.ToString();
             m_CourtDetail_PlayerRank.text = myProfile.Rank == 0 ? "Rank NA" : "Rank " + myProfile.Rank;
             m_CourtDetail_PlayerMVP.SetActive(myProfile.IsMVP);
+            int index = m_CourtDetail_PlayerStatus.options.FindIndex(item => item.text == myProfile.Status);
+            if (index >= 0)
+            {
+                m_CourtDetail_PlayerStatus.value = index;
+            }
 
             m_CourtDetail_CheckInButton.GetComponent<Button>().onClick.RemoveAllListeners();
             m_CourtDetail_CheckInButton.GetComponent<Button>().onClick.AddListener(delegate
@@ -361,6 +393,20 @@ public class Courts : MonoBehaviour
         m_CourtScrollRect.horizontalNormalizedPosition = 0;
         LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)m_CourtScrollRect.transform);
         m_CourtScrollRect.GetComponent<UI_ScrollRectOcclusion>().Init();
+        if (m_RecentlyVisitedCourts_ListTransform.childCount > 0)
+        {
+            Home.Instance.m_CourtScrollRect.gameObject.SetActive(true);
+            Home.Instance.m_GetStartedPanel.SetActive(false);
+            yield return new WaitForEndOfFrame();
+            m_RecentlyVisitedCourts_ScrollRect.horizontalNormalizedPosition = 0;
+            LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)m_RecentlyVisitedCourts_ScrollRect.transform);
+            m_RecentlyVisitedCourts_ScrollRect.GetComponent<UI_ScrollRectOcclusion>().Init();
+        }
+        else
+        {
+            Home.Instance.m_CourtScrollRect.gameObject.SetActive(false);
+            Home.Instance.m_GetStartedPanel.SetActive(true);
+        }
     }
 
     public void CourtCheckedIn(int courtId)
