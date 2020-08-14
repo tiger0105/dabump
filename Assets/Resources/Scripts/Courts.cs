@@ -19,6 +19,21 @@ public class Courts : MonoBehaviour
     [SerializeField] private Transform m_CourtListTransform;
 
     [SerializeField] private GameObject m_CourtDetailPanel;
+    [SerializeField] private Transform m_CourtDetail_Image;
+    [SerializeField] private GameObject m_CourtDetail_CheckedIn;
+    [SerializeField] private Image m_CourtDetail_Badge;
+    [SerializeField] private TextMeshProUGUI m_CourtDetail_Name;
+    [SerializeField] private TextMeshProUGUI m_CourtDetail_Address;
+    [SerializeField] private Transform m_CourtDetail_PlayerList;
+    [SerializeField] private GameObject m_CourtDetail_PlayerListItemPrefab;
+    [SerializeField] private Transform m_CourtDetail_PlayerImage;
+    [SerializeField] private TextMeshProUGUI m_CourtDetail_PlayerName;
+    [SerializeField] private TextMeshProUGUI m_CourtDetail_PlayerPosition;
+    [SerializeField] private TextMeshProUGUI m_CourtDetail_PlayerBadges;
+    [SerializeField] private TextMeshProUGUI m_CourtDetail_PlayerRank;
+    [SerializeField] private GameObject m_CourtDetail_PlayerMVP;
+    [SerializeField] private TMP_Dropdown m_CourtDetail_PlayerStatus;
+    [SerializeField] private Button m_CourtDetail_CheckInButton;
 
     [SerializeField] private List<Sprite> m_BadgeIcons;
 
@@ -90,6 +105,14 @@ public class Courts : MonoBehaviour
 
     private void ShowCourtDetailPanel(int courtId)
     {
+        Transform courtImage = m_CourtListTransform.GetChild(courtId - 1).GetChild(1).GetChild(0).GetChild(0);
+        m_CourtDetail_Image.GetComponent<RawImage>().texture = courtImage.GetComponent<RawImage>().texture;
+        m_CourtDetail_Image.GetComponent<AspectRatioFitter>().aspectMode = courtImage.GetComponent<AspectRatioFitter>().aspectMode;
+        m_CourtDetail_Image.GetComponent<AspectRatioFitter>().aspectRatio = courtImage.GetComponent<AspectRatioFitter>().aspectRatio;
+        m_CourtDetail_Name.text = m_CourtListTransform.GetChild(courtId - 1).GetChild(1).GetChild(1).GetComponent<TextMeshProUGUI>().text;
+        m_CourtDetail_Address.text = m_CourtListTransform.GetChild(courtId - 1).GetChild(1).GetChild(2).GetComponent<TextMeshProUGUI>().text;
+        m_CourtDetail_CheckedIn.SetActive(m_CourtListTransform.GetChild(courtId - 1).GetChild(1).GetChild(4).gameObject.activeSelf);
+        m_CourtDetail_Badge.color = m_CourtListTransform.GetChild(courtId - 1).GetChild(1).GetChild(5).GetComponent<Image>().color;
         m_CourtDetailPanel.SetActive(true);
     }
 
