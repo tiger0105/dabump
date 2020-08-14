@@ -59,6 +59,38 @@ public class Courts : MonoBehaviour
 
     private IEnumerator StartLocationServiceAndCheckIn(int courtId)
     {
+#if UNITY_EDITOR
+        string userId = PlayerPrefs.GetString("UserID", string.Empty);
+        if (userId == string.Empty)
+        {
+            m_CourtDetail_LoadingBar.SetActive(false);
+            yield break;
+        }
+
+        PlayerProfile myProfile = FirebaseManager.Instance.m_PlayerCardList.FirstOrDefault(item => item.UserID == userId);
+        if (myProfile != null)
+        {
+            myProfile.CheckedInCourt = courtId;
+            string courts = myProfile.VisitedCourts;
+            List<int> visitedCourts = new List<int>();
+            if (courts.Length > 0)
+            {
+                visitedCourts = courts.Split(',').Select(int.Parse).ToList();
+            }
+            visitedCourts.Add(courtId);
+            visitedCourts = visitedCourts.Distinct().ToList();
+            myProfile.VisitedCourts = string.Join(",", visitedCourts.ToArray());
+            myProfile.Badges = visitedCourts.Count;
+            myProfile.Status = m_CourtDetail_PlayerStatus.options[m_CourtDetail_PlayerStatus.value].text;
+            _ = FirebaseManager.Instance.SetCheckInCourtAsync(myProfile);
+        }
+        else
+        {
+            m_CourtDetail_LoadingBar.SetActive(false);
+            m_LocationServiceFailedPopup.GetComponent<Animator>().Play("Modal Window In");
+            m_LocationServiceFailedPopup_MessageText.text = "Unexpected error occured. Please restart the application.";
+        }
+#else
         if (!Input.location.isEnabledByUser)
         {
             m_CourtDetail_LoadingBar.SetActive(false);
@@ -138,6 +170,7 @@ public class Courts : MonoBehaviour
         }
 
         Input.location.Stop();
+#endif
     }
 
     private double DegreesToRadians(double degrees)
