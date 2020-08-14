@@ -241,6 +241,8 @@ public class Courts : MonoBehaviour
 
     private void ClearCourtsList()
     {
+        m_CourtScrollRect.GetComponent<UI_ScrollRectOcclusion>().enabled = false;
+
         foreach (Transform cardTrans in m_CourtListTransform)
         {
             Destroy(cardTrans.gameObject);
@@ -251,6 +253,8 @@ public class Courts : MonoBehaviour
 
     private void ClearRecentlyVisitedCourtsList()
     {
+        m_RecentlyVisitedCourts_ScrollRect.GetComponent<UI_ScrollRectOcclusion>().enabled = true;
+
         foreach (Transform cardTrans in m_RecentlyVisitedCourts_ListTransform)
         {
             Destroy(cardTrans.gameObject);
@@ -317,10 +321,10 @@ public class Courts : MonoBehaviour
 
         for (int i = 0; i < FirebaseManager.Instance.m_PlayerCardList.Count; i++)
         {
-            if (FirebaseManager.Instance.m_PlayerCardList[i].VisitedCourts.Length == 0)
+            if (FirebaseManager.Instance.m_PlayerCardList[i].CheckedInCourt == 0)
                 continue;
 
-            if (FirebaseManager.Instance.m_PlayerCardList[i].VisitedCourts.Contains(courtId.ToString()))
+            if (FirebaseManager.Instance.m_PlayerCardList[i].CheckedInCourt == courtId)
             {
                 PlayerProfile profile = FirebaseManager.Instance.m_PlayerCardList[i];
                 GameObject playerItem = Instantiate(m_CourtDetail_PlayerListItemPrefab);
@@ -478,6 +482,7 @@ public class Courts : MonoBehaviour
         yield return new WaitForEndOfFrame();
         m_CourtScrollRect.horizontalNormalizedPosition = 0;
         LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)m_CourtScrollRect.transform);
+        m_CourtScrollRect.GetComponent<UI_ScrollRectOcclusion>().enabled = true;
         m_CourtScrollRect.GetComponent<UI_ScrollRectOcclusion>().Init();
     }
 
@@ -490,6 +495,7 @@ public class Courts : MonoBehaviour
             yield return new WaitForEndOfFrame();
             m_RecentlyVisitedCourts_ScrollRect.horizontalNormalizedPosition = 0;
             LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)m_RecentlyVisitedCourts_ScrollRect.transform);
+            m_RecentlyVisitedCourts_ScrollRect.GetComponent<UI_ScrollRectOcclusion>().enabled = true;
             m_RecentlyVisitedCourts_ScrollRect.GetComponent<UI_ScrollRectOcclusion>().Init();
         }
         else
@@ -503,53 +509,9 @@ public class Courts : MonoBehaviour
     {
         BuildCourtsList();
         BuildRecentlyVisitedCourtsList();
-        ShowCourtDetailPanel(myProfile.CheckedInCourt);
         Profile.Instance.SetCourtCheckedInAndBadgeStatus(myProfile);
+        ShowCourtDetailPanel(myProfile.CheckedInCourt);
 
         m_CourtDetail_LoadingBar.SetActive(false);
-        //string userId = PlayerPrefs.GetString("UserID", string.Empty);
-        //PlayerProfile myProfile = FirebaseManager.Instance.m_PlayerCardList.FirstOrDefault(item => item.UserID == userId);
-        //if (myProfile != null)
-        //{
-        //    GameObject playerItem = Instantiate(m_CourtDetail_PlayerListItemPrefab);
-        //    playerItem.transform.SetParent(m_CourtDetail_PlayerList, false);
-        //    playerItem.name = myProfile.Name;
-        //    if (myProfile.Image.Length > 0)
-        //    {
-        //        FileInfo fileInfo = new FileInfo(myProfile.Image);
-        //        if (fileInfo.Exists)
-        //        {
-        //            MemoryStream dest = new MemoryStream();
-
-        //            using (Stream source = fileInfo.OpenRead())
-        //            {
-        //                byte[] buffer = new byte[2048];
-        //                int bytesRead;
-        //                while ((bytesRead = source.Read(buffer, 0, buffer.Length)) > 0)
-        //                {
-        //                    dest.Write(buffer, 0, bytesRead);
-        //                }
-        //            }
-
-        //            byte[] imageBytes = dest.ToArray();
-
-        //            Texture2D texture = new Texture2D(300, 300);
-        //            texture.LoadImage(imageBytes);
-        //            playerItem.transform.GetChild(0).GetChild(0).GetChild(0).GetComponent<RawImage>().texture = texture;
-        //            playerItem.transform.GetChild(0).GetChild(0).GetChild(0).GetComponent<AspectRatioFitter>().aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
-        //            playerItem.transform.GetChild(0).GetChild(0).GetChild(0).GetComponent<AspectRatioFitter>().aspectRatio = (float)texture.width / texture.height;
-        //        }
-        //    }
-        //    playerItem.transform.GetChild(0).GetChild(1).GetChild(0).GetComponent<TextMeshProUGUI>().text = myProfile.Name;
-        //    playerItem.transform.GetChild(0).GetChild(1).GetChild(1).GetComponent<TextMeshProUGUI>().text = myProfile.TeamPosition;
-        //    playerItem.transform.GetChild(0).GetChild(1).GetChild(2).GetChild(0).GetChild(2).GetComponent<TextMeshProUGUI>().text = myProfile.Badges == 0 ? "Not Available" : myProfile.Badges.ToString();
-        //    playerItem.transform.GetChild(0).GetChild(1).GetChild(2).GetChild(1).GetComponent<TextMeshProUGUI>().text = myProfile.Rank == 0 ? "RANK NA" : "Rank " + myProfile.Rank;
-        //    playerItem.transform.GetChild(0).GetChild(1).GetChild(2).GetChild(2).GetComponent<TextMeshProUGUI>().text = myProfile.Status;
-        //    playerItem.transform.GetChild(0).GetChild(1).GetChild(2).GetChild(3).gameObject.SetActive(myProfile.IsMVP);
-        //}
-
-        //m_CourtDetail_CheckInButton.GetComponent<CanvasGroup>().alpha = 0.3f;
-        //m_CourtDetail_CheckInButton.GetComponent<CanvasGroup>().interactable = false;
-        //m_CourtDetail_CheckInButton.GetComponent<CanvasGroup>().blocksRaycasts = false;
     }
 }
