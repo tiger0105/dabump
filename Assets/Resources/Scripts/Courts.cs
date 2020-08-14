@@ -416,6 +416,7 @@ public class Courts : MonoBehaviour
             m_CourtDetail_PlayerName.text = myProfile.Name;
             m_CourtDetail_PlayerPosition.text = myProfile.TeamPosition;
             m_CourtDetail_PlayerBadges.text = myProfile.Badges == 0 ? "Not Available" : myProfile.Badges.ToString();
+            Profile.Instance.m_RightPanel_Badge.text = m_CourtDetail_PlayerBadges.text;
             m_CourtDetail_PlayerRank.text = myProfile.Rank == 0 ? "Rank NA" : "Rank " + myProfile.Rank;
             m_CourtDetail_PlayerMVP.SetActive(myProfile.IsMVP);
             int index = m_CourtDetail_PlayerStatus.options.FindIndex(item => item.text == myProfile.Status);

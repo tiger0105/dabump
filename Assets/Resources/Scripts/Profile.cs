@@ -63,7 +63,7 @@ public class Profile : MonoBehaviour
     [SerializeField] private RawImage m_RightPanel_Photo;
     [SerializeField] public TextMeshProUGUI m_RightPanel_Name;
     [SerializeField] public TextMeshProUGUI m_RightPanel_TeamPosition;
-    [SerializeField] private TextMeshProUGUI m_RightPanel_Badge;
+    [SerializeField] public TextMeshProUGUI m_RightPanel_Badge;
     [SerializeField] public TextMeshProUGUI m_RightPanel_Rank;
     [SerializeField] private GameObject m_RightPanel_IsMVP;
 
