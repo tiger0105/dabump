@@ -192,7 +192,6 @@ public class Profile : MonoBehaviour
     {
         m_LoadingBar.SetActive(true);
 
-        //string userId = PlayerPrefs.GetString("UserID", "xYTSdaejKPPgFIUXj9MhxtFZ4B03");
         string userId = PlayerPrefs.GetString("UserID", string.Empty);
         string userName = PlayerPrefs.GetString("UserName", string.Empty);
         if (userId == string.Empty)
@@ -262,6 +261,7 @@ public class Profile : MonoBehaviour
         m_LoadingBar.SetActive(false);
 
         PlayerInfo.Instance.BuildPlayerInfoList();
+        Courts.Instance.BuildRecentlyVisitedCourtsList();
         Main.Instance.SwitchToMainPanel();
     }
 

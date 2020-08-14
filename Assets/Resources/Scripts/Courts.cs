@@ -161,6 +161,37 @@ public class Courts : MonoBehaviour
         UpdateCourtListLayout();
     }
 
+    public void BuildRecentlyVisitedCourtsList()
+    {
+        ClearRecentlyVisitedCourtsList();
+
+        string userId = PlayerPrefs.GetString("UserID", string.Empty);
+        PlayerProfile myProfile = FirebaseManager.Instance.m_PlayerCardList.FirstOrDefault(item => item.UserID == userId);
+        if (myProfile != null)
+        {
+            string courts = myProfile.VisitedCourts;
+            Debug.Log(courts);
+            List<int> visitedCourts = new List<int>();
+            if (courts.Length > 0)
+            {
+                visitedCourts = courts.Split(',').Select(int.Parse).ToList();
+            }
+            
+            for (int i = 0; i < visitedCourts.Count; i ++)
+            {
+                int id = visitedCourts[i] - 1;
+                GameObject visitedCard = Instantiate(m_CourtListTransform.GetChild(id).gameObject);
+                visitedCard.transform.SetParent(m_RecentlyVisitedCourts_ListTransform, false);
+                visitedCard.name = name;
+                Button cardButton = visitedCard.transform.GetChild(1).GetComponent<Button>();
+                cardButton.onClick.RemoveAllListeners();
+                cardButton.onClick.AddListener(delegate { ShowCourtDetailPanel(id); });
+            }
+        }
+
+        UpdateRecentlyVisitedCourtsListLayout();
+    }
+
     private void ClearCourtsList()
     {
         foreach (Transform cardTrans in m_CourtListTransform)
@@ -169,6 +200,21 @@ public class Courts : MonoBehaviour
         }
 
         m_CourtListTransform.DetachChildren();
+    }
+
+    private void ClearRecentlyVisitedCourtsList()
+    {
+        foreach (Transform cardTrans in m_RecentlyVisitedCourts_ListTransform)
+        {
+            Destroy(cardTrans.gameObject);
+        }
+
+        m_RecentlyVisitedCourts_ListTransform.DetachChildren();
+    }
+
+    private void UpdateRecentlyVisitedCourtsListLayout()
+    {
+        StartCoroutine(ApplyRecentlyVisitedCourtsListScrollPosition());
     }
 
     private void AddCourt(int id, string name, string address, string imagePath = "")
@@ -200,24 +246,6 @@ public class Courts : MonoBehaviour
         card.transform.GetChild(1).GetChild(5).GetComponent<Image>().sprite = m_BadgeIcons[id - 1];
 
         SetCourtImage(id, imagePath);
-
-        string userId = PlayerPrefs.GetString("UserID", string.Empty);
-        PlayerProfile myProfile = FirebaseManager.Instance.m_PlayerCardList.FirstOrDefault(item => item.UserID == userId);
-        if (myProfile != null)
-        {
-            string courts = myProfile.VisitedCourts;
-            List<int> visitedCourts = new List<int>();
-            if (courts.Length > 0)
-            {
-                visitedCourts = courts.Split(',').Select(int.Parse).ToList();
-            }
-            if (visitedCourts.Contains(id))
-            {
-                GameObject visitedCard = Instantiate(card);
-                visitedCard.transform.SetParent(m_RecentlyVisitedCourts_ListTransform, false);
-                visitedCard.name = name;
-            }
-        }
     }
 
     private void ShowCourtDetailPanel(int courtId)
@@ -393,6 +421,10 @@ public class Courts : MonoBehaviour
         m_CourtScrollRect.horizontalNormalizedPosition = 0;
         LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)m_CourtScrollRect.transform);
         m_CourtScrollRect.GetComponent<UI_ScrollRectOcclusion>().Init();
+    }
+
+    private IEnumerator ApplyRecentlyVisitedCourtsListScrollPosition()
+    {
         if (m_RecentlyVisitedCourts_ListTransform.childCount > 0)
         {
             Home.Instance.m_CourtScrollRect.gameObject.SetActive(true);
