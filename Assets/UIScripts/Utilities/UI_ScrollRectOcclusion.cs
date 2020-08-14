@@ -26,7 +26,7 @@ namespace UnityEngine.UI.Extensions
     public class UI_ScrollRectOcclusion : MonoBehaviour
     {
         //if true user will need to call Init() method manually (in case the contend of the scrollview is generated from code or requires special initialization)
-        public bool InitByUser = false;
+        public bool InitByUser = true;
         private ScrollRect _scrollRect;
         private ContentSizeFitter _contentSizeFitter;
         private VerticalLayoutGroup _verticalLayoutGroup;

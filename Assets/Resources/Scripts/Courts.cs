@@ -15,7 +15,7 @@ public class Courts : MonoBehaviour
 
     [SerializeField] private GameObject m_CourtCardPrefab;
     [SerializeField] private ScrollRect m_CourtScrollRect;
-    [SerializeField] private Transform m_CourtListTransform;
+    [SerializeField] private Transform m_Courts_ListTransform;
 
     [SerializeField] private ScrollRect m_RecentlyVisitedCourts_ScrollRect;
     [SerializeField] private Transform m_RecentlyVisitedCourts_ListTransform;
@@ -198,6 +198,9 @@ public class Courts : MonoBehaviour
     {
         ClearCourtsList();
 
+        m_Courts_ListTransform.GetComponent<HorizontalLayoutGroup>().enabled = true;
+        m_Courts_ListTransform.GetComponent<ContentSizeFitter>().enabled = true;
+
         if (FirebaseManager.Instance == null || FirebaseManager.Instance.m_CourtList == null)
             return;
 
@@ -206,12 +209,18 @@ public class Courts : MonoBehaviour
             AddCourt(court.ID, court.Name, court.Address, court.ImagePath);
         }
 
+        UI_ScrollRectOcclusion occlusion = m_CourtScrollRect.gameObject.AddComponent<UI_ScrollRectOcclusion>();
+        occlusion.InitByUser = true;
+
         UpdateCourtListLayout();
     }
 
     public void BuildRecentlyVisitedCourtsList()
     {
         ClearRecentlyVisitedCourtsList();
+
+        m_RecentlyVisitedCourts_ListTransform.GetComponent<HorizontalLayoutGroup>().enabled = true;
+        m_RecentlyVisitedCourts_ListTransform.GetComponent<ContentSizeFitter>().enabled = true;
 
         string userId = PlayerPrefs.GetString("UserID", string.Empty);
         PlayerProfile myProfile = FirebaseManager.Instance.m_PlayerCardList.FirstOrDefault(item => item.UserID == userId);
@@ -227,7 +236,7 @@ public class Courts : MonoBehaviour
             for (int i = 0; i < visitedCourts.Count; i ++)
             {
                 int id = visitedCourts[i] - 1;
-                GameObject visitedCard = Instantiate(m_CourtListTransform.GetChild(id).gameObject);
+                GameObject visitedCard = Instantiate(m_Courts_ListTransform.GetChild(id).gameObject);
                 visitedCard.transform.SetParent(m_RecentlyVisitedCourts_ListTransform, false);
                 visitedCard.name = name;
                 Button cardButton = visitedCard.transform.GetChild(1).GetComponent<Button>();
@@ -236,24 +245,33 @@ public class Courts : MonoBehaviour
             }
         }
 
+        UI_ScrollRectOcclusion occlusion = m_RecentlyVisitedCourts_ScrollRect.gameObject.AddComponent<UI_ScrollRectOcclusion>();
+        occlusion.InitByUser = true;
+
         UpdateRecentlyVisitedCourtsListLayout();
     }
 
     private void ClearCourtsList()
     {
-        m_CourtScrollRect.GetComponent<UI_ScrollRectOcclusion>().enabled = false;
+        if (m_CourtScrollRect.GetComponent<UI_ScrollRectOcclusion>())
+        {
+            Destroy(m_CourtScrollRect.GetComponent<UI_ScrollRectOcclusion>());
+        }
 
-        foreach (Transform cardTrans in m_CourtListTransform)
+        foreach (Transform cardTrans in m_Courts_ListTransform)
         {
             Destroy(cardTrans.gameObject);
         }
 
-        m_CourtListTransform.DetachChildren();
+        m_Courts_ListTransform.DetachChildren();
     }
 
     private void ClearRecentlyVisitedCourtsList()
     {
-        m_RecentlyVisitedCourts_ScrollRect.GetComponent<UI_ScrollRectOcclusion>().enabled = true;
+        if (m_RecentlyVisitedCourts_ScrollRect.GetComponent<UI_ScrollRectOcclusion>())
+        {
+            Destroy(m_RecentlyVisitedCourts_ScrollRect.GetComponent<UI_ScrollRectOcclusion>());
+        }
 
         foreach (Transform cardTrans in m_RecentlyVisitedCourts_ListTransform)
         {
@@ -271,7 +289,7 @@ public class Courts : MonoBehaviour
     private void AddCourt(int id, string name, string address, string imagePath = "")
     {
         GameObject card = Instantiate(m_CourtCardPrefab);
-        card.transform.SetParent(m_CourtListTransform, false);
+        card.transform.SetParent(m_Courts_ListTransform, false);
         card.name = name;
         Button cardButton = card.transform.GetChild(1).GetComponent<Button>();
         cardButton.onClick.RemoveAllListeners();
@@ -301,14 +319,14 @@ public class Courts : MonoBehaviour
 
     private void ShowCourtDetailPanel(int courtId)
     {
-        Transform courtImage = m_CourtListTransform.GetChild(courtId - 1).GetChild(1).GetChild(0).GetChild(0);
+        Transform courtImage = m_Courts_ListTransform.GetChild(courtId - 1).GetChild(1).GetChild(0).GetChild(0);
         m_CourtDetail_Image.GetComponent<RawImage>().texture = courtImage.GetComponent<RawImage>().texture;
         m_CourtDetail_Image.GetComponent<AspectRatioFitter>().aspectMode = courtImage.GetComponent<AspectRatioFitter>().aspectMode;
         m_CourtDetail_Image.GetComponent<AspectRatioFitter>().aspectRatio = courtImage.GetComponent<AspectRatioFitter>().aspectRatio;
-        m_CourtDetail_Name.text = m_CourtListTransform.GetChild(courtId - 1).GetChild(1).GetChild(1).GetComponent<TextMeshProUGUI>().text;
-        m_CourtDetail_Address.text = m_CourtListTransform.GetChild(courtId - 1).GetChild(1).GetChild(2).GetComponent<TextMeshProUGUI>().text;
-        m_CourtDetail_CheckedIn.SetActive(m_CourtListTransform.GetChild(courtId - 1).GetChild(1).GetChild(4).gameObject.activeSelf);
-        Image badgeImage = m_CourtListTransform.GetChild(courtId - 1).GetChild(1).GetChild(5).GetComponent<Image>();
+        m_CourtDetail_Name.text = m_Courts_ListTransform.GetChild(courtId - 1).GetChild(1).GetChild(1).GetComponent<TextMeshProUGUI>().text;
+        m_CourtDetail_Address.text = m_Courts_ListTransform.GetChild(courtId - 1).GetChild(1).GetChild(2).GetComponent<TextMeshProUGUI>().text;
+        m_CourtDetail_CheckedIn.SetActive(m_Courts_ListTransform.GetChild(courtId - 1).GetChild(1).GetChild(4).gameObject.activeSelf);
+        Image badgeImage = m_Courts_ListTransform.GetChild(courtId - 1).GetChild(1).GetChild(5).GetComponent<Image>();
         m_CourtDetail_Badge.sprite = badgeImage.sprite;
         m_CourtDetail_Badge.color = badgeImage.color;
 
@@ -468,8 +486,8 @@ public class Courts : MonoBehaviour
         Texture2D texture = new Texture2D(500, 580);
         texture.LoadImage(imageBytes);
         float aspectRatio = (float)texture.width / texture.height;
-        m_CourtListTransform.GetChild(id - 1).GetChild(1).GetChild(0).GetChild(0).GetComponent<AspectRatioFitter>().aspectRatio = aspectRatio;
-        m_CourtListTransform.GetChild(id - 1).GetChild(1).GetChild(0).GetChild(0).GetComponent<RawImage>().texture = texture;
+        m_Courts_ListTransform.GetChild(id - 1).GetChild(1).GetChild(0).GetChild(0).GetComponent<AspectRatioFitter>().aspectRatio = aspectRatio;
+        m_Courts_ListTransform.GetChild(id - 1).GetChild(1).GetChild(0).GetChild(0).GetComponent<RawImage>().texture = texture;
     }
 
     private void UpdateCourtListLayout()
@@ -505,12 +523,17 @@ public class Courts : MonoBehaviour
         }
     }
 
-    public void CourtCheckedIn(PlayerProfile myProfile)
+    public IEnumerator CourtCheckedIn(PlayerProfile myProfile)
     {
+        yield return new WaitForEndOfFrame();
         BuildCourtsList();
+        yield return new WaitForEndOfFrame();
         BuildRecentlyVisitedCourtsList();
+        yield return new WaitForEndOfFrame();
         Profile.Instance.SetCourtCheckedInAndBadgeStatus(myProfile);
+        yield return new WaitForEndOfFrame();
         ShowCourtDetailPanel(myProfile.CheckedInCourt);
+        yield return new WaitForEndOfFrame();
 
         m_CourtDetail_LoadingBar.SetActive(false);
     }
