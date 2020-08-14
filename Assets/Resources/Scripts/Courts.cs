@@ -26,6 +26,7 @@ public class Courts : MonoBehaviour
     [SerializeField] private Image m_CourtDetail_Badge;
     [SerializeField] private TextMeshProUGUI m_CourtDetail_Name;
     [SerializeField] private TextMeshProUGUI m_CourtDetail_Address;
+    [SerializeField] private Button m_CourtDetail_LocateWithGoogleMapButton;
 
     [SerializeField] private Transform m_CourtDetail_PlayerList;
     [SerializeField] private GameObject m_CourtDetail_PlayerListItemPrefab;
@@ -325,6 +326,15 @@ public class Courts : MonoBehaviour
         m_CourtDetail_Image.GetComponent<AspectRatioFitter>().aspectRatio = courtImage.GetComponent<AspectRatioFitter>().aspectRatio;
         m_CourtDetail_Name.text = m_Courts_ListTransform.GetChild(courtId - 1).GetChild(1).GetChild(1).GetComponent<TextMeshProUGUI>().text;
         m_CourtDetail_Address.text = m_Courts_ListTransform.GetChild(courtId - 1).GetChild(1).GetChild(2).GetComponent<TextMeshProUGUI>().text;
+        m_CourtDetail_LocateWithGoogleMapButton.onClick.RemoveAllListeners();
+        string url = FirebaseManager.Instance.m_CourtList[courtId - 1].Url;
+        if (url.Length > 0)
+        {
+            m_CourtDetail_LocateWithGoogleMapButton.onClick.AddListener(delegate
+            {
+                Application.OpenURL(url);
+            });
+        }
         m_CourtDetail_CheckedIn.SetActive(m_Courts_ListTransform.GetChild(courtId - 1).GetChild(1).GetChild(4).gameObject.activeSelf);
         Image badgeImage = m_Courts_ListTransform.GetChild(courtId - 1).GetChild(1).GetChild(5).GetComponent<Image>();
         m_CourtDetail_Badge.sprite = badgeImage.sprite;

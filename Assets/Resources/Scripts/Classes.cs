@@ -10,9 +10,10 @@ public class Court
     public string Address;
     public string ImagePath;
     public List<string> CheckedInPlayers;
+    public string Url;
     public GeoPoint Location;
 
-    public Court(GeoPoint location, int id = 0, string name = "", string address = "", string imagePath = "", List<string> checkedInPlayers = null)
+    public Court(GeoPoint location, int id = 0, string name = "", string address = "", string imagePath = "", List<string> checkedInPlayers = null, string url = "")
     {
         Location = location;
         ID = id;
@@ -23,6 +24,7 @@ public class Court
             CheckedInPlayers = new List<string>();
         else
             CheckedInPlayers = checkedInPlayers;
+        Url = url;
     }
 }
 

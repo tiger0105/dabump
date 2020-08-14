@@ -331,7 +331,7 @@ public class FirebaseManager : MonoBehaviour
 
                 GeoPoint location = (GeoPoint)court["Location"];
 
-                m_CourtList.Add(new Court(location, imageID, court["Name"].ToString(), court["Address"].ToString(), imagePath));
+                m_CourtList.Add(new Court(location, imageID, court["Name"].ToString(), court["Address"].ToString(), imagePath, null, court["Url"].ToString()));
 
                 if (m_CourtsListDownloaded.Count == m_CourtsListCount)
                     VerifyCourtsListDownloadProgressCompleted();
