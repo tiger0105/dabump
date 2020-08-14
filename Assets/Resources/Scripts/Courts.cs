@@ -199,7 +199,7 @@ public class Courts : MonoBehaviour
                 visitedCard.name = name;
                 Button cardButton = visitedCard.transform.GetChild(1).GetComponent<Button>();
                 cardButton.onClick.RemoveAllListeners();
-                cardButton.onClick.AddListener(delegate { ShowCourtDetailPanel(id); });
+                cardButton.onClick.AddListener(delegate { ShowCourtDetailPanel(id + 1); });
             }
         }
 

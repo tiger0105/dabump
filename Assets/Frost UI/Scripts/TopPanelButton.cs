@@ -3,7 +3,7 @@ using UnityEngine.EventSystems;
 
 namespace Michsky.UI.Frost
 {
-    public class TopPanelButton : MonoBehaviour, IPointerDownHandler, IPointerExitHandler
+    public class TopPanelButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
         private Animator buttonAnimator;
 
@@ -12,29 +12,35 @@ namespace Michsky.UI.Frost
             buttonAnimator = this.GetComponent<Animator>();
         }
 
-        public void OnPointerDown(PointerEventData eventData)
+        public void OnPointerEnter(PointerEventData eventData)
         {
-            if (buttonAnimator.GetCurrentAnimatorStateInfo(0).IsName("Hover to Pressed"))
+            if (Input.touchSupported && Input.touches[0].phase == TouchPhase.Began)
             {
-                // do nothing because it's clicked
-            }
+                if (buttonAnimator.GetCurrentAnimatorStateInfo(0).IsName("Hover to Pressed"))
+                {
+                    // do nothing because it's clicked
+                }
 
-            else
-            {
-                buttonAnimator.Play("Hover");
+                else
+                {
+                    buttonAnimator.Play("Hover");
+                }
             }
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            if (buttonAnimator.GetCurrentAnimatorStateInfo(0).IsName("Hover to Pressed"))
+            if (Input.touchSupported && Input.touches[0].phase == TouchPhase.Began)
             {
-                // do nothing because it's clicked
-            }
+                if (buttonAnimator.GetCurrentAnimatorStateInfo(0).IsName("Hover to Pressed"))
+                {
+                    // do nothing because it's clicked
+                }
 
-            else
-            {
-                buttonAnimator.Play("Normal");
+                else
+                {
+                    buttonAnimator.Play("Normal");
+                }
             }
         }
     }
