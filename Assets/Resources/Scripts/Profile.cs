@@ -265,7 +265,7 @@ public class Profile : MonoBehaviour
         Main.Instance.SwitchToMainPanel();
     }
 
-    private void SetCourtCheckedInAndBadgeStatus(PlayerProfile profile)
+    public void SetCourtCheckedInAndBadgeStatus(PlayerProfile profile)
     {
         List<int> visitedCourts = new List<int>();
         if (profile.VisitedCourts.Length > 0)

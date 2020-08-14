@@ -56,7 +56,7 @@ public class FirebaseManager : MonoBehaviour
 
     private void Start()
     {
-        //PlayerPrefs.SetString("UserID", "xYTSdaejKPPgFIUXj9MhxtFZ4B03");
+        PlayerPrefs.SetString("UserID", "xYTSdaejKPPgFIUXj9MhxtFZ4B03");
 
         m_CourtList = new List<Court>();
         m_PlayerCardList = new List<PlayerProfile>();
@@ -132,7 +132,7 @@ public class FirebaseManager : MonoBehaviour
     #region Google SignIn
     public void OnGoogleSignIn()
     {
-        //StartCoroutine(Profile.Instance.GetProfileAsync());
+        StartCoroutine(Profile.Instance.GetProfileAsync());
 
         GoogleSignIn.Configuration = configuration;
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -606,9 +606,7 @@ public class FirebaseManager : MonoBehaviour
 
         await documentReference.UpdateAsync(profile);
 
-        Courts.Instance.CourtCheckedIn(myProfile.CheckedInCourt);
-
-        Courts.Instance.m_CourtDetail_LoadingBar.SetActive(false);
+        Courts.Instance.CourtCheckedIn(myProfile);
     }
 
     public void DebugLog(string text)

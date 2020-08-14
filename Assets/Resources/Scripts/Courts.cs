@@ -466,8 +466,14 @@ public class Courts : MonoBehaviour
         }
     }
 
-    public void CourtCheckedIn(int courtId)
+    public void CourtCheckedIn(PlayerProfile myProfile)
     {
+        BuildCourtsList();
+        BuildRecentlyVisitedCourtsList();
+        ShowCourtDetailPanel(myProfile.CheckedInCourt);
+        Profile.Instance.SetCourtCheckedInAndBadgeStatus(myProfile);
+
+        m_CourtDetail_LoadingBar.SetActive(false);
         //string userId = PlayerPrefs.GetString("UserID", string.Empty);
         //PlayerProfile myProfile = FirebaseManager.Instance.m_PlayerCardList.FirstOrDefault(item => item.UserID == userId);
         //if (myProfile != null)
