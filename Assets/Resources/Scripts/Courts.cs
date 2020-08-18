@@ -17,9 +17,6 @@ public class Courts : MonoBehaviour
     [SerializeField] private ScrollRect m_CourtScrollRect;
     [SerializeField] private Transform m_Courts_ListTransform;
 
-    [SerializeField] private ScrollRect m_RecentlyVisitedCourts_ScrollRect;
-    [SerializeField] private Transform m_RecentlyVisitedCourts_ListTransform;
-
     [SerializeField] private GameObject m_CourtDetailPanel;
     [SerializeField] private Transform m_CourtDetail_Image;
     [SerializeField] private GameObject m_CourtDetail_CheckedIn;
@@ -217,42 +214,6 @@ public class Courts : MonoBehaviour
         UpdateCourtListLayout();
     }
 
-    public void BuildRecentlyVisitedCourtsList()
-    {
-        ClearRecentlyVisitedCourtsList();
-
-        m_RecentlyVisitedCourts_ListTransform.GetComponent<HorizontalLayoutGroup>().enabled = true;
-        m_RecentlyVisitedCourts_ListTransform.GetComponent<ContentSizeFitter>().enabled = true;
-
-        string userId = PlayerPrefs.GetString("UserID", string.Empty);
-        PlayerProfile myProfile = FirebaseManager.Instance.m_PlayerCardList.FirstOrDefault(item => item.UserID == userId);
-        if (myProfile != null)
-        {
-            string courts = myProfile.VisitedCourts;
-            List<int> visitedCourts = new List<int>();
-            if (courts.Length > 0)
-            {
-                visitedCourts = courts.Split(',').Select(int.Parse).ToList();
-            }
-            
-            for (int i = 0; i < visitedCourts.Count; i ++)
-            {
-                int id = visitedCourts[i] - 1;
-                GameObject visitedCard = Instantiate(m_Courts_ListTransform.GetChild(id).gameObject);
-                visitedCard.transform.SetParent(m_RecentlyVisitedCourts_ListTransform, false);
-                visitedCard.name = name;
-                Button cardButton = visitedCard.transform.GetChild(1).GetComponent<Button>();
-                cardButton.onClick.RemoveAllListeners();
-                cardButton.onClick.AddListener(delegate { ShowCourtDetailPanel(id + 1); });
-            }
-        }
-
-        UI_ScrollRectOcclusion occlusion = m_RecentlyVisitedCourts_ScrollRect.gameObject.AddComponent<UI_ScrollRectOcclusion>();
-        occlusion.InitByUser = true;
-
-        UpdateRecentlyVisitedCourtsListLayout();
-    }
-
     private void ClearCourtsList()
     {
         if (m_CourtScrollRect.GetComponent<UI_ScrollRectOcclusion>())
@@ -266,26 +227,6 @@ public class Courts : MonoBehaviour
         }
 
         m_Courts_ListTransform.DetachChildren();
-    }
-
-    private void ClearRecentlyVisitedCourtsList()
-    {
-        if (m_RecentlyVisitedCourts_ScrollRect.GetComponent<UI_ScrollRectOcclusion>())
-        {
-            Destroy(m_RecentlyVisitedCourts_ScrollRect.GetComponent<UI_ScrollRectOcclusion>());
-        }
-
-        foreach (Transform cardTrans in m_RecentlyVisitedCourts_ListTransform)
-        {
-            Destroy(cardTrans.gameObject);
-        }
-
-        m_RecentlyVisitedCourts_ListTransform.DetachChildren();
-    }
-
-    private void UpdateRecentlyVisitedCourtsListLayout()
-    {
-        StartCoroutine(ApplyRecentlyVisitedCourtsListScrollPosition());
     }
 
     private void AddCourt(int id, string name, string address, string imagePath = "")
@@ -516,33 +457,12 @@ public class Courts : MonoBehaviour
         m_CourtScrollRect.GetComponent<UI_ScrollRectOcclusion>().Init();
     }
 
-    private IEnumerator ApplyRecentlyVisitedCourtsListScrollPosition()
-    {
-        if (m_RecentlyVisitedCourts_ListTransform.childCount > 0)
-        {
-            Home.Instance.m_CourtScrollRect.gameObject.SetActive(true);
-            Home.Instance.m_GetStartedPanel.SetActive(false);
-            yield return new WaitForEndOfFrame();
-            m_RecentlyVisitedCourts_ScrollRect.horizontalNormalizedPosition = 0;
-            LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)m_RecentlyVisitedCourts_ScrollRect.transform);
-            m_RecentlyVisitedCourts_ScrollRect.GetComponent<UI_ScrollRectOcclusion>().enabled = true;
-            m_RecentlyVisitedCourts_ScrollRect.GetComponent<UI_ScrollRectOcclusion>().Init();
-        }
-        else
-        {
-            Home.Instance.m_CourtScrollRect.gameObject.SetActive(false);
-            Home.Instance.m_GetStartedPanel.SetActive(true);
-        }
-    }
-
     public IEnumerator CourtCheckedIn(PlayerProfile myProfile)
     {
         yield return new WaitForEndOfFrame();
         BuildCourtsList();
         yield return new WaitForEndOfFrame();
         Profile.Instance.SetCourtCheckedInAndBadgeStatus(myProfile);
-        yield return new WaitForEndOfFrame();
-        BuildRecentlyVisitedCourtsList();
         yield return new WaitForEndOfFrame();
         ShowCourtDetailPanel(myProfile.CheckedInCourt);
         yield return new WaitForEndOfFrame();

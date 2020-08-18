@@ -261,7 +261,6 @@ public class Profile : MonoBehaviour
         m_LoadingBar.SetActive(false);
 
         PlayerInfo.Instance.BuildPlayerInfoList();
-        Courts.Instance.BuildRecentlyVisitedCourtsList();
         Main.Instance.SwitchToMainPanel();
     }
 

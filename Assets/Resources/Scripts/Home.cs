@@ -8,10 +8,6 @@ public class Home : MonoBehaviour
 {
     public static Home Instance;
 
-    [Header("Recently Visited Courts Section")]
-    [SerializeField] private GameObject m_CourtCardPrefab;
-    [SerializeField] public ScrollRect m_CourtScrollRect;
-    [SerializeField] private Transform m_CourtListTransform;
     [Header("Get Started Section")]
     [SerializeField] public GameObject m_GetStartedPanel;
     [SerializeField] public HorizontalScrollSnap m_HorizontalScrollSnap;
