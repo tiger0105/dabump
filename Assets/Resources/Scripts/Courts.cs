@@ -57,8 +57,8 @@ public class Courts : MonoBehaviour
 
     private IEnumerator StartLocationServiceAndCheckIn(int courtId)
     {
-//#if UNITY_EDITOR
-#if !FOR_GPS_TEST
+#if UNITY_EDITOR
+        //#if !FOR_GPS_TEST
         string userId = PlayerPrefs.GetString("UserID", string.Empty);
         if (userId == string.Empty)
         {
