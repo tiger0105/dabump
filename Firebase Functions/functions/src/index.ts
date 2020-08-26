@@ -12,6 +12,8 @@ const transporter = nodemailer.createTransport({
 
 admin.initializeApp();
 
+let cancelCheckInTimeOut:any = undefined;
+
 const firestore = admin.firestore();
 
 export const fetchCourts = functions.https.onRequest(async (request, response) => {
@@ -41,7 +43,7 @@ export const getMyProfile = functions.https.onRequest(async (request, response) 
     const userName = request.body.userName;
     const profileReference = firestore.collection('Profiles').doc(userId);
     const doc = await profileReference.get();
-    if (doc.data() == undefined) {
+    if (doc.data() === undefined) {
         const data = {
             UserID: userId,
             Name: userName,
@@ -55,10 +57,23 @@ export const getMyProfile = functions.https.onRequest(async (request, response) 
             CardBottomColor: '000000',
         }
         const result = await profileReference.set(data);
-        if (result != undefined)
+        if (result !== undefined)
             response.send(data);
     } else
         response.send(doc.data());
+});
+
+export const cancelCheckInStatus = functions.https.onRequest((request, response) => {
+    const userId = request.body.userId;
+
+    if (cancelCheckInTimeOut !== undefined)
+    {
+        clearTimeout(cancelCheckInTimeOut);
+    }
+
+    cancelCheckInTimeOut = setTimeout(async function() {
+        await cancelCheckIn(userId);
+    }, 7200000);
 });
 
 export const submitHelpForm = functions.https.onRequest(async (request, response) => {
@@ -81,3 +96,12 @@ export const submitHelpForm = functions.https.onRequest(async (request, response
         }
     });
 });
+
+async function cancelCheckIn(userId: any)
+{
+    const profileReference = firestore.collection('Profiles').doc(userId);
+    const data = {
+        CheckedInCourt: 0,
+    }
+    await profileReference.update(data);
+}

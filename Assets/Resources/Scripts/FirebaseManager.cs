@@ -6,12 +6,14 @@ using Firebase.Firestore;
 using Firebase.Storage;
 using Google;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Networking;
 using Query = Firebase.Firestore.Query;
 
 public class FirebaseManager : MonoBehaviour
@@ -331,7 +333,7 @@ public class FirebaseManager : MonoBehaviour
 
                 GeoPoint location = (GeoPoint)court["Location"];
 
-                m_CourtList.Add(new Court(location, imageID, court["Name"].ToString(), court["Address"].ToString(), imagePath, null, court["Url"].ToString()));
+                m_CourtList.Add(new Court(location, imageID, court["Name"].ToString(), court["Address"].ToString(), imagePath, null, court["Url"].ToString(), court["Type"].ToString()));
 
                 if (m_CourtsListDownloaded.Count == m_CourtsListCount)
                     VerifyCourtsListDownloadProgressCompleted();
@@ -606,7 +608,25 @@ public class FirebaseManager : MonoBehaviour
 
         await documentReference.UpdateAsync(profile);
 
+        StartCoroutine(CancelCheckInStatus(myProfile.UserID));
+
         StartCoroutine(Courts.Instance.CourtCheckedIn(myProfile));
+    }
+
+    private IEnumerator CancelCheckInStatus(string userId)
+    {
+        WWWForm form = new WWWForm();
+        form.AddField("userId", userId);
+
+        using (UnityWebRequest www = UnityWebRequest.Post(AppData._REST_API_ENDPOINT + AppData._REST_API_CANCEL_CHECK_IN_STATUS, form))
+        {
+            yield return www.SendWebRequest();
+
+            if (www.isNetworkError || www.isHttpError)
+            {
+                yield break;
+            }
+        }
     }
 
     public void DebugLog(string text)

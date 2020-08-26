@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Michsky.UI.Frost;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -14,8 +15,12 @@ public class Courts : MonoBehaviour
     public static Courts Instance;
 
     [SerializeField] private GameObject m_CourtCardPrefab;
-    [SerializeField] private ScrollRect m_CourtScrollRect;
-    [SerializeField] private Transform m_Courts_ListTransform;
+    
+    [SerializeField] private ScrollRect m_Indoor_CourtScrollRect;
+    [SerializeField] private Transform m_Indoor_Courts_ListTransform;
+
+    [SerializeField] private ScrollRect m_Outdoor_CourtScrollRect;
+    [SerializeField] private Transform m_Outdoor_Courts_ListTransform;
 
     [SerializeField] private GameObject m_CourtDetailPanel;
     [SerializeField] private Transform m_CourtDetail_Image;
@@ -197,43 +202,68 @@ public class Courts : MonoBehaviour
     {
         ClearCourtsList();
 
-        m_Courts_ListTransform.GetComponent<HorizontalLayoutGroup>().enabled = true;
-        m_Courts_ListTransform.GetComponent<ContentSizeFitter>().enabled = true;
+        m_Indoor_Courts_ListTransform.GetComponent<HorizontalLayoutGroup>().enabled = true;
+        m_Indoor_Courts_ListTransform.GetComponent<ContentSizeFitter>().enabled = true;
+
+        m_Outdoor_Courts_ListTransform.GetComponent<HorizontalLayoutGroup>().enabled = true;
+        m_Outdoor_Courts_ListTransform.GetComponent<ContentSizeFitter>().enabled = true;
 
         if (FirebaseManager.Instance == null || FirebaseManager.Instance.m_CourtList == null)
             return;
 
         foreach (Court court in FirebaseManager.Instance.m_CourtList)
         {
-            AddCourt(court.ID, court.Name, court.Address, court.ImagePath);
+            AddCourt(court.ID, court.Name, court.Address, court.ImagePath, court.Type);
         }
 
-        UI_ScrollRectOcclusion occlusion = m_CourtScrollRect.gameObject.AddComponent<UI_ScrollRectOcclusion>();
+        UI_ScrollRectOcclusion occlusion = m_Indoor_CourtScrollRect.gameObject.AddComponent<UI_ScrollRectOcclusion>();
         occlusion.InitByUser = true;
+
+        UI_ScrollRectOcclusion occlusion2 = m_Outdoor_CourtScrollRect.gameObject.AddComponent<UI_ScrollRectOcclusion>();
+        occlusion2.InitByUser = true;
 
         UpdateCourtListLayout();
     }
 
     private void ClearCourtsList()
     {
-        if (m_CourtScrollRect.GetComponent<UI_ScrollRectOcclusion>())
+        if (m_Indoor_CourtScrollRect.GetComponent<UI_ScrollRectOcclusion>())
         {
-            Destroy(m_CourtScrollRect.GetComponent<UI_ScrollRectOcclusion>());
+            Destroy(m_Indoor_CourtScrollRect.GetComponent<UI_ScrollRectOcclusion>());
         }
 
-        foreach (Transform cardTrans in m_Courts_ListTransform)
+        foreach (Transform cardTrans in m_Indoor_Courts_ListTransform)
         {
             Destroy(cardTrans.gameObject);
         }
 
-        m_Courts_ListTransform.DetachChildren();
+        m_Indoor_Courts_ListTransform.DetachChildren();
+
+        if (m_Outdoor_CourtScrollRect.GetComponent<UI_ScrollRectOcclusion>())
+        {
+            Destroy(m_Outdoor_CourtScrollRect.GetComponent<UI_ScrollRectOcclusion>());
+        }
+
+        foreach (Transform cardTrans in m_Outdoor_Courts_ListTransform)
+        {
+            Destroy(cardTrans.gameObject);
+        }
+
+        m_Outdoor_Courts_ListTransform.DetachChildren();
     }
 
-    private void AddCourt(int id, string name, string address, string imagePath = "")
+    private void AddCourt(int id, string name, string address, string imagePath = "", string type = "INDOOR")
     {
         GameObject card = Instantiate(m_CourtCardPrefab);
-        card.transform.SetParent(m_Courts_ListTransform, false);
-        card.name = name;
+        if (type == "INDOOR")
+        {
+            card.transform.SetParent(m_Indoor_Courts_ListTransform, false);
+        }
+        else
+        {
+            card.transform.SetParent(m_Outdoor_Courts_ListTransform, false);
+        }
+        card.name = id.ToString();
         Button cardButton = card.transform.GetChild(1).GetComponent<Button>();
         cardButton.onClick.RemoveAllListeners();
         cardButton.onClick.AddListener(delegate { ShowCourtDetailPanel(id); });
@@ -262,12 +292,32 @@ public class Courts : MonoBehaviour
 
     private void ShowCourtDetailPanel(int courtId)
     {
-        Transform courtImage = m_Courts_ListTransform.GetChild(courtId - 1).GetChild(1).GetChild(0).GetChild(0);
+        Transform trans = null;
+        foreach (Transform t in m_Indoor_Courts_ListTransform)
+        {
+            if (t.name == courtId.ToString())
+            {
+                trans = t;
+                break;
+            }
+        }
+        foreach (Transform t in m_Outdoor_Courts_ListTransform)
+        {
+            if (t.name == courtId.ToString())
+            {
+                trans = t;
+                break;
+            }
+        }
+        if (trans == null)
+            return;
+
+        Transform courtImage = trans.GetChild(1).GetChild(0).GetChild(0);
         m_CourtDetail_Image.GetComponent<RawImage>().texture = courtImage.GetComponent<RawImage>().texture;
         m_CourtDetail_Image.GetComponent<AspectRatioFitter>().aspectMode = courtImage.GetComponent<AspectRatioFitter>().aspectMode;
         m_CourtDetail_Image.GetComponent<AspectRatioFitter>().aspectRatio = courtImage.GetComponent<AspectRatioFitter>().aspectRatio;
-        m_CourtDetail_Name.text = m_Courts_ListTransform.GetChild(courtId - 1).GetChild(1).GetChild(1).GetComponent<TextMeshProUGUI>().text;
-        m_CourtDetail_Address.text = m_Courts_ListTransform.GetChild(courtId - 1).GetChild(1).GetChild(2).GetComponent<TextMeshProUGUI>().text;
+        m_CourtDetail_Name.text = trans.GetChild(1).GetChild(1).GetComponent<TextMeshProUGUI>().text;
+        m_CourtDetail_Address.text = trans.GetChild(1).GetChild(2).GetComponent<TextMeshProUGUI>().text;
         m_CourtDetail_LocateWithGoogleMapButton.onClick.RemoveAllListeners();
         string url = FirebaseManager.Instance.m_CourtList[courtId - 1].Url;
         if (url.Length > 0)
@@ -277,8 +327,8 @@ public class Courts : MonoBehaviour
                 Application.OpenURL(url);
             });
         }
-        m_CourtDetail_CheckedIn.SetActive(m_Courts_ListTransform.GetChild(courtId - 1).GetChild(1).GetChild(4).gameObject.activeSelf);
-        Image badgeImage = m_Courts_ListTransform.GetChild(courtId - 1).GetChild(1).GetChild(5).GetComponent<Image>();
+        m_CourtDetail_CheckedIn.SetActive(trans.GetChild(1).GetChild(4).gameObject.activeSelf);
+        Image badgeImage = trans.GetChild(1).GetChild(5).GetComponent<Image>();
         m_CourtDetail_Badge.sprite = badgeImage.sprite;
         m_CourtDetail_Badge.color = badgeImage.color;
 
@@ -416,8 +466,28 @@ public class Courts : MonoBehaviour
         StartCoroutine(StartLocationServiceAndCheckIn(courtId));
     }
 
-    public void SetCourtImage(int id, string imagePath)
+    public void SetCourtImage(int courtId, string imagePath)
     {
+        Transform trans = null;
+        foreach (Transform t in m_Indoor_Courts_ListTransform)
+        {
+            if (t.name == courtId.ToString())
+            {
+                trans = t;
+                break;
+            }
+        }
+        foreach (Transform t in m_Outdoor_Courts_ListTransform)
+        {
+            if (t.name == courtId.ToString())
+            {
+                trans = t;
+                break;
+            }
+        }
+        if (trans == null)
+            return;
+
         FileInfo fileInfo = new FileInfo(imagePath);
 
         if (!fileInfo.Exists) return;
@@ -439,8 +509,8 @@ public class Courts : MonoBehaviour
         Texture2D texture = new Texture2D(500, 580);
         texture.LoadImage(imageBytes);
         float aspectRatio = (float)texture.width / texture.height;
-        m_Courts_ListTransform.GetChild(id - 1).GetChild(1).GetChild(0).GetChild(0).GetComponent<AspectRatioFitter>().aspectRatio = aspectRatio;
-        m_Courts_ListTransform.GetChild(id - 1).GetChild(1).GetChild(0).GetChild(0).GetComponent<RawImage>().texture = texture;
+        trans.GetChild(1).GetChild(0).GetChild(0).GetComponent<AspectRatioFitter>().aspectRatio = aspectRatio;
+        trans.GetChild(1).GetChild(0).GetChild(0).GetComponent<RawImage>().texture = texture;
     }
 
     private void UpdateCourtListLayout()
@@ -451,10 +521,19 @@ public class Courts : MonoBehaviour
     private IEnumerator ApplyScrollPosition()
     {
         yield return new WaitForEndOfFrame();
-        m_CourtScrollRect.horizontalNormalizedPosition = 0;
-        LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)m_CourtScrollRect.transform);
-        m_CourtScrollRect.GetComponent<UI_ScrollRectOcclusion>().enabled = true;
-        m_CourtScrollRect.GetComponent<UI_ScrollRectOcclusion>().Init();
+        m_Indoor_CourtScrollRect.horizontalNormalizedPosition = 0;
+        LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)m_Indoor_CourtScrollRect.transform);
+        m_Indoor_CourtScrollRect.GetComponent<UI_ScrollRectOcclusion>().enabled = true;
+        m_Indoor_CourtScrollRect.GetComponent<UI_ScrollRectOcclusion>().Init();
+
+        yield return new WaitForEndOfFrame();
+        m_Outdoor_CourtScrollRect.horizontalNormalizedPosition = 0;
+        LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)m_Outdoor_CourtScrollRect.transform);
+        m_Outdoor_CourtScrollRect.GetComponent<UI_ScrollRectOcclusion>().enabled = true;
+        m_Outdoor_CourtScrollRect.GetComponent<UI_ScrollRectOcclusion>().Init();
+
+        m_Indoor_Root.SetActive(true);
+        m_Outdoor_Root.SetActive(false);
     }
 
     public IEnumerator CourtCheckedIn(PlayerProfile myProfile)
@@ -468,5 +547,31 @@ public class Courts : MonoBehaviour
         yield return new WaitForEndOfFrame();
 
         m_CourtDetail_LoadingBar.SetActive(false);
+    }
+
+    [SerializeField] private ToggleGroup m_Tab;
+    [SerializeField] private GameObject m_Indoor_Root;
+    [SerializeField] private GameObject m_Outdoor_Root;
+
+    public void TabButtonClicked(bool isOn)
+    {
+        if (isOn == true)
+        {
+            Toggle activeToggle = m_Tab.ActiveToggles().FirstOrDefault();
+            if (activeToggle != null)
+            {
+                int tabIndex = activeToggle.transform.GetSiblingIndex();
+                if (tabIndex == 0)
+                {
+                    m_Indoor_Root.SetActive(true);
+                    m_Outdoor_Root.SetActive(false);
+                }
+                else if (tabIndex == 1)
+                {
+                    m_Indoor_Root.SetActive(false);
+                    m_Outdoor_Root.SetActive(true);
+                }
+            }
+        }
     }
 }

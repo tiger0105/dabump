@@ -11,9 +11,10 @@ public class Court
     public string ImagePath;
     public List<string> CheckedInPlayers;
     public string Url;
+    public string Type;
     public GeoPoint Location;
 
-    public Court(GeoPoint location, int id = 0, string name = "", string address = "", string imagePath = "", List<string> checkedInPlayers = null, string url = "")
+    public Court(GeoPoint location, int id = 0, string name = "", string address = "", string imagePath = "", List<string> checkedInPlayers = null, string url = "", string type = "INDOOR")
     {
         Location = location;
         ID = id;
@@ -25,6 +26,7 @@ public class Court
         else
             CheckedInPlayers = checkedInPlayers;
         Url = url;
+        Type = type;
     }
 }
 
@@ -67,6 +69,7 @@ public static class AppData
     public static string _REST_API_ENDPOINT = "https://us-central1-dabump-8c59c.cloudfunctions.net";
     public static string _REST_API_GET_MY_PROFILE = "/getMyProfile";
     public static string _REST_API_SUBMIT_HELP_FORM = "/submitHelpForm";
+    public static string _REST_API_CANCEL_CHECK_IN_STATUS = "/cancelCheckInStatus";
 
     public static PlayerProfile _PlayerProfile = new PlayerProfile();
 }
