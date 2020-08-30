@@ -157,12 +157,9 @@ public class Profile : MonoBehaviour
 #elif UNITY_IOS
         string filePath = Application.persistentDataPath + "/" + imagePath;
 #endif
-        Debug.Log("Profile Image Path: " + filePath);
         FileInfo fileInfo = new FileInfo(filePath);
 
         if (fileInfo == null || !fileInfo.Exists) return;
-
-        Debug.Log("Profile Image Exists");
 
         MemoryStream dest = new MemoryStream();
 

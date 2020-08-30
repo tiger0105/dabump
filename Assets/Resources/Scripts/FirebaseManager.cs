@@ -348,10 +348,13 @@ public class FirebaseManager : MonoBehaviour
 
     private async Task DownloadCourtImageAsync(StorageReference imageReference, string path, int id)
     {
+        Debug.Log("Downloading Court Image...");
         await imageReference.GetFileAsync(path).ContinueWith(resultTask =>
         {
             if (!resultTask.IsFaulted && !resultTask.IsCanceled)
             {
+                Debug.Log("Downloading Court Image Completed. Url: " + path);
+                Debug.Log("Downloaded File Exists? -> " + File.Exists(path));
                 if (Courts.Instance != null)
                 {
                     Courts.Instance.SetCourtImage(id, path);

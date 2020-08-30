@@ -353,7 +353,7 @@ public class Courts : MonoBehaviour
                 if (profile.Image.Length > 0)
                 {
                     FileInfo fileInfo = new FileInfo(profile.Image);
-                    Debug.Log(fileInfo.FullName);
+
                     if (fileInfo != null && fileInfo.Exists)
                     {
                         MemoryStream dest = new MemoryStream();
@@ -491,11 +491,7 @@ public class Courts : MonoBehaviour
 
         FileInfo fileInfo = new FileInfo("file:///" + imagePath);
 
-        Debug.Log("File Url: file:///" + imagePath);
-
         if (fileInfo == null || !fileInfo.Exists) return;
-
-        Debug.Log("File Url Exists");
 
         MemoryStream dest = new MemoryStream();
 
