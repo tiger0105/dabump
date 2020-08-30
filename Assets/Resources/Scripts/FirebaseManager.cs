@@ -349,9 +349,17 @@ public class FirebaseManager : MonoBehaviour
     private async Task DownloadCourtImageAsync(StorageReference imageReference, string path, int id)
     {
         Debug.Log("Downloading Court Image...");
-        await imageReference.GetFileAsync(path).ContinueWith(resultTask =>
+        await imageReference.GetFileAsync("file://" + path).ContinueWith(resultTask =>
         {
-            if (!resultTask.IsFaulted && !resultTask.IsCanceled)
+            if (resultTask.IsCanceled)
+            {
+                Debug.Log("DownloadCourtImageAsync() -> imageReference.GetFileAsync() was canceled.");
+            }
+            else if (resultTask.IsFaulted)
+            {
+                Debug.Log("DownloadCourtImageAsync() -> imageReference.GetFileAsync() encountered an error: " + resultTask.Exception);
+            }
+            else
             {
                 Debug.Log("Downloading Court Image Completed. Url: " + path);
                 Debug.Log("Downloaded File Exists? -> " + File.Exists(path));
