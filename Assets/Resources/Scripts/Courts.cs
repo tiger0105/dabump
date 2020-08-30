@@ -489,7 +489,7 @@ public class Courts : MonoBehaviour
         if (trans == null)
             return;
 
-        FileInfo fileInfo = new FileInfo("file:///" + imagePath);
+        FileInfo fileInfo = new FileInfo("file://" + imagePath);
 
         if (fileInfo == null || !fileInfo.Exists) return;
 

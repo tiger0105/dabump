@@ -348,8 +348,11 @@ public class FirebaseManager : MonoBehaviour
 
     private async Task DownloadCourtImageAsync(StorageReference imageReference, string path, int id)
     {
-        Debug.Log("Downloading Court Image...");
+#if UNITY_ANDROID
+        await imageReference.GetFileAsync(path).ContinueWith(resultTask =>
+#elif UNITY_IOS
         await imageReference.GetFileAsync("file://" + path).ContinueWith(resultTask =>
+#endif
         {
             if (resultTask.IsCanceled)
             {
@@ -361,8 +364,6 @@ public class FirebaseManager : MonoBehaviour
             }
             else
             {
-                Debug.Log("Downloading Court Image Completed. Url: " + path);
-                Debug.Log("Downloaded File Exists? -> " + File.Exists(path));
                 if (Courts.Instance != null)
                 {
                     Courts.Instance.SetCourtImage(id, path);
@@ -387,7 +388,7 @@ public class FirebaseManager : MonoBehaviour
     }
 #endregion
 
-#region Players Information
+    #region Players Information
     private async Task FetchPlayersInfoAsync()
     {
         CollectionReference playersRef = firestore.Collection("Profiles");
@@ -480,7 +481,11 @@ public class FirebaseManager : MonoBehaviour
 
     private async Task DownloadPlayerImageAsync(StorageReference imageReference, string path, int id)
     {
+#if UNITY_ANDROID
         await imageReference.GetFileAsync(path).ContinueWith(resultTask =>
+#elif UNITY_IOS
+        await imageReference.GetFileAsync("file://" + path).ContinueWith(resultTask =>
+#endif
         {
             m_ProfilesListDownloaded[id] = true;
             if (m_ProfilesListDownloaded.Count == m_ProfilesListCount)
