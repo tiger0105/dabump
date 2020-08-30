@@ -77,9 +77,14 @@ public class PlayerInfo : MonoBehaviour
 
     private void SetPlayerImage(RawImage image, string userId)
     {
-        FileInfo fileInfo = new FileInfo(Application.persistentDataPath + "/Profiles/" + userId + ".jpg");
+#if UNITY_ANDROID
+        string imagePath = Application.persistentDataPath + "/Profiles/" + userId + ".jpg";
+#elif UNITY_IOS
+        string imagePath = Application.persistentDataPath + "/Profiles/" + userId + ".jpg";
+#endif
+        FileInfo fileInfo = new FileInfo(imagePath);
 
-        if (!fileInfo.Exists) return;
+        if (fileInfo == null || !fileInfo.Exists) return;
 
         MemoryStream dest = new MemoryStream();
 

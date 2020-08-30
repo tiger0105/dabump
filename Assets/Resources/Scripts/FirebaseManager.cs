@@ -286,8 +286,11 @@ public class FirebaseManager : MonoBehaviour
     {
         CollectionReference courtsRef = firestore.Collection("Courts");
         Query query = courtsRef.OrderBy("ID");
-
+#if UNITY_ANDROID
         string persistentCourtsPath = Application.persistentDataPath + "/Courts";
+#elif UNITY_IOS
+        string persistentCourtsPath = Application.persistentDataPath + "/Courts";
+#endif
 
         if (!Directory.Exists(persistentCourtsPath))
         {
@@ -314,9 +317,11 @@ public class FirebaseManager : MonoBehaviour
             {
                 Dictionary<string, object> court = documentSnapshot.ToDictionary();
                 StorageReference imageReference = storage.GetReference(court["Image"].ToString());
-
+#if UNITY_ANDROID
                 string imagePath = Application.persistentDataPath + "/" + court["Image"].ToString();
-
+#elif UNITY_IOS
+                string imagePath = Application.persistentDataPath + "/" + court["Image"].ToString();
+#endif
                 bool canParse = int.TryParse(court["ID"].ToString(), out int imageID);
                 if (canParse == false) continue;
 
@@ -369,16 +374,18 @@ public class FirebaseManager : MonoBehaviour
 
         m_IsCourtsDownloadProgressCompleted = true;
     }
-    #endregion
+#endregion
 
-    #region Players Information
+#region Players Information
     private async Task FetchPlayersInfoAsync()
     {
         CollectionReference playersRef = firestore.Collection("Profiles");
         Query query = playersRef.OrderByDescending("Badges");
-
+#if UNITY_ANDROID
         string persistentCourtsPath = Application.persistentDataPath + "/Profiles";
-
+#elif UNITY_IOS
+        string persistentCourtsPath = Application.persistentDataPath + "/Profiles";
+#endif
         if (!Directory.Exists(persistentCourtsPath))
         {
             Directory.CreateDirectory(persistentCourtsPath);
@@ -418,9 +425,11 @@ public class FirebaseManager : MonoBehaviour
                 if (player["Image"].ToString().Length > 0 && player["Image"].ToString().Contains("Profiles/"))
                 {
                     StorageReference imageReference = storage.GetReference(player["Image"].ToString());
-
+#if UNITY_ANDROID
                     imagePath = Application.persistentDataPath + "/" + player["Image"].ToString();
-
+#elif UNITY_IOS
+                    imagePath = Application.persistentDataPath + "/" + player["Image"].ToString();
+#endif
                     bool isImageDownloaded = false;
                     FileInfo info = new FileInfo(imagePath);
                     if (info.Exists)
@@ -478,7 +487,7 @@ public class FirebaseManager : MonoBehaviour
 
         m_IsProfilesDownloadProgressCompleted = true;
     }
-    #endregion
+#endregion
 
     public async Task UpdateDisplayName(string name)
     {
@@ -554,7 +563,11 @@ public class FirebaseManager : MonoBehaviour
             {
                 if (isImageUploaded == true)
                 {
+#if UNITY_ANDROID
                     string fileName = Application.persistentDataPath + "/Profiles/" + userId + ".jpg";
+#elif UNITY_IOS
+                    string fileName = Application.persistentDataPath + "/Profiles/" + userId + ".jpg";
+#endif
                     if (File.Exists(fileName))
                     {
                         File.Delete(fileName);

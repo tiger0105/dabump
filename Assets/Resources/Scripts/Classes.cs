@@ -1,6 +1,8 @@
 ﻿using Firebase.Firestore;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using UnityEngine;
 
 [Serializable]
 public class Court
@@ -72,4 +74,12 @@ public static class AppData
     public static string _REST_API_CANCEL_CHECK_IN_STATUS = "/cancelCheckInStatus";
 
     public static PlayerProfile _PlayerProfile = new PlayerProfile();
+
+    public static string IOSPersistentDataPath()
+    {
+        string path = Application.persistentDataPath.Substring(0, Application.persistentDataPath.Length - 5);
+        path = path.Substring(0, path.LastIndexOf('/'));
+        path = Path.Combine(path, "Documents");
+        return path;
+    }
 }

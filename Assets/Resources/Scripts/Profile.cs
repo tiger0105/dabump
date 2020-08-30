@@ -152,9 +152,17 @@ public class Profile : MonoBehaviour
 
     public void SetProfileImage(string imagePath)
     {
-        FileInfo fileInfo = new FileInfo(Application.persistentDataPath + "/" + imagePath);
+#if UNITY_ANDROID
+        string filePath = Application.persistentDataPath + "/" + imagePath;
+#elif UNITY_IOS
+        string filePath = Application.persistentDataPath + "/" + imagePath;
+#endif
+        Debug.Log("Profile Image Path: " + filePath);
+        FileInfo fileInfo = new FileInfo(filePath);
 
-        if (!fileInfo.Exists) return;
+        if (fileInfo == null || !fileInfo.Exists) return;
+
+        Debug.Log("Profile Image Exists");
 
         MemoryStream dest = new MemoryStream();
 
@@ -168,10 +176,15 @@ public class Profile : MonoBehaviour
             }
         }
 
+        Debug.Log("Profile Image Assigned");
+
         byte[] imageBytes = dest.ToArray();
 
         Texture2D texture = new Texture2D(296, 370);
         texture.LoadImage(imageBytes);
+
+        Debug.Log("Profile Image Loaded");
+
         float aspectRatio = (float)texture.width / texture.height;
 
         m_CardPhoto.texture = texture;

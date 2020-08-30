@@ -353,7 +353,8 @@ public class Courts : MonoBehaviour
                 if (profile.Image.Length > 0)
                 {
                     FileInfo fileInfo = new FileInfo(profile.Image);
-                    if (fileInfo.Exists)
+                    Debug.Log(fileInfo.FullName);
+                    if (fileInfo != null && fileInfo.Exists)
                     {
                         MemoryStream dest = new MemoryStream();
 
@@ -392,7 +393,7 @@ public class Courts : MonoBehaviour
             if (myProfile.Image.Length > 0)
             {
                 FileInfo playerImageFI = new FileInfo(myProfile.Image);
-                if (playerImageFI.Exists)
+                if (playerImageFI != null && playerImageFI.Exists)
                 {
                     MemoryStream dest = new MemoryStream();
 
@@ -488,9 +489,13 @@ public class Courts : MonoBehaviour
         if (trans == null)
             return;
 
-        FileInfo fileInfo = new FileInfo(imagePath);
+        FileInfo fileInfo = new FileInfo("file:///" + imagePath);
 
-        if (!fileInfo.Exists) return;
+        Debug.Log("File Url: file:///" + imagePath);
+
+        if (fileInfo == null || !fileInfo.Exists) return;
+
+        Debug.Log("File Url Exists");
 
         MemoryStream dest = new MemoryStream();
 
