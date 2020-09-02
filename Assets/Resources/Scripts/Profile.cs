@@ -263,7 +263,8 @@ public class Profile : MonoBehaviour
         }
 
         m_Connected.text = PlayerPrefs.GetInt("IsLoggedIn", 0) == 0 ? string.Empty : "Connected";
-        m_SocialIcon.sprite = PlayerPrefs.GetString("SocialPlatform", "Google") == "Google" ? m_SocialIcons[0] : m_SocialIcons[1];
+        m_SocialIcon.sprite = PlayerPrefs.GetString("SocialPlatform", "Google") == "Google" ? m_SocialIcons[0] :
+            (PlayerPrefs.GetString("SocialPlatform", "Google") == "Facebook" ? m_SocialIcons[1] : m_SocialIcons[2]);
         m_SocialLoginEmail.text = PlayerPrefs.GetString("UserEmail", string.Empty);
         if (m_SocialLoginEmail.text == string.Empty)
             m_SocialLoginEmail.text = "Email is not set as public. Please sign in again.";

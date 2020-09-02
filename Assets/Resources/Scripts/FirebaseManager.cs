@@ -1,4 +1,7 @@
-﻿using Facebook.Unity;
+﻿using AppleAuth.IOS;
+using AppleAuth.IOS.Enums;
+using AppleAuth.IOS.Interfaces;
+using Facebook.Unity;
 using Firebase;
 using Firebase.Auth;
 using Firebase.Extensions;
@@ -10,6 +13,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
@@ -29,6 +33,9 @@ public class FirebaseManager : MonoBehaviour
     private FirebaseUser user;
     public FirebaseFirestore firestore;
     public FirebaseStorage storage;
+
+    private IAppleAuthManager _appleAuthManager;
+    private OnDemandMessageHandlerScheduler _scheduler;
 
     [HideInInspector] public List<Court> m_CourtList;
     [HideInInspector] public List<PlayerProfile> m_PlayerCardList;
@@ -278,6 +285,63 @@ public class FirebaseManager : MonoBehaviour
         {
             Time.timeScale = 1;
         }
+    }
+    #endregion
+
+    #region Apple SignIn
+    public void OnAppleSignIn()
+    {
+        Main.Instance.ShowLoginLoadingBar();
+
+        _appleAuthManager.LoginWithAppleId(
+            LoginOptions.IncludeEmail | LoginOptions.IncludeFullName,
+            credentials =>
+            {
+                if (!(credentials is IAppleIDCredential appleIdCredential))
+                {
+                    Main.Instance.HideLoginLoadingBar();
+                    return;
+                }
+
+                string rawNonce = _appleAuthManager.RawNonce;
+
+                string authCode = Encoding.UTF8.GetString(appleIdCredential.AuthorizationCode);
+
+                Credential credential = OAuthProvider.GetCredential("apple.com", Encoding.UTF8.GetString(appleIdCredential.IdentityToken), rawNonce, authCode);
+
+                auth.SignInWithCredentialAsync(credential).ContinueWith(task =>
+                {
+                    if (task.IsCanceled)
+                    {
+                        Main.Instance.HideLoginLoadingBar();
+                        return;
+                    }
+
+
+                    if (task.IsFaulted)
+                    {
+                        Main.Instance.HideLoginLoadingBar();
+                        return;
+                    }
+
+                    user = auth.CurrentUser;
+
+                    PlayerPrefs.SetString("UserID", user.UserId);
+                    PlayerPrefs.SetString("UserName", user.DisplayName);
+                    PlayerPrefs.SetString("UserEmail", user.Email);
+                    PlayerPrefs.SetString("SocialPlatform", "Apple");
+                    PlayerPrefs.SetInt("IsLoggedIn", 1);
+
+                    StartCoroutine(Profile.Instance.GetProfileAsync());
+                });
+            },
+            error =>
+            {
+                Main.Instance.HideLoginLoadingBar();
+                return;
+            });
+
+        Main.Instance.HideLoginLoadingBar();
     }
     #endregion
 

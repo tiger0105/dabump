@@ -57,6 +57,11 @@ public class Main : MonoBehaviour
         FirebaseManager.Instance.OnFacebookSignIn();
     }
 
+    public void AppleSignIn()
+    {
+        FirebaseManager.Instance.OnAppleSignIn();
+    }
+
     public void QuitApplication()
     {
         Application.Quit();
