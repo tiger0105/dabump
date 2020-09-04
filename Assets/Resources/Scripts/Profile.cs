@@ -224,7 +224,11 @@ public class Profile : MonoBehaviour
                 yield break;
             }
 
+            Debug.Log(www.downloadHandler.text);
+
             PlayerProfile playerProfile = JsonUtility.FromJson<PlayerProfile>(www.downloadHandler.text);
+
+
             AppData._PlayerProfile = playerProfile;
 
             ColorUtility.TryParseHtmlString("#" + playerProfile.CardTopColor, out Color topColor);
@@ -242,16 +246,32 @@ public class Profile : MonoBehaviour
             m_CardName.color = SetInvertedColor(m_CardTopColor.color);
             m_CardPosition.text = m_TeamPositionSelector.elements[index];
             m_CardPosition.color = SetInvertedColor(m_CardBottomColor.color);
+
+            Debug.Log("Player Profile From Json Worked");
+
             int rank = 0;
+            Debug.Log(playerProfile.Image);
             if (FirebaseManager.Instance.m_CourtList.Count > 0)
-                rank = FirebaseManager.Instance.m_PlayerCardList.FirstOrDefault(item => item.UserID == userId).Rank;
+            {
+                Debug.Log("before setting up a rank");
+                if (FirebaseManager.Instance.m_PlayerCardList.Count > 0)
+                {
+                    PlayerProfile p = FirebaseManager.Instance.m_PlayerCardList.FirstOrDefault(item => item.UserID == userId);
+                    if (p != null)
+                        rank = p.Rank;
+                }
+                Debug.Log("after setting up a rank");
+            }
             m_CardRank.text = rank == 0 ? "Rank NA" : ("Rank " + rank);
             
             if (playerProfile.Image.Length > 0)
             {
+                Debug.Log("if player image is valid");
                 SetProfileImage(playerProfile.Image);
                 m_UploadCardPhotoButton.transform.GetChild(0).gameObject.SetActive(false);
             }
+
+            Debug.Log("After Setting up Upload card photo button");
 
             m_RightPanel_Name.text = playerProfile.Name;
             m_RightPanel_TeamPosition.text = playerProfile.TeamPosition.ToUpper();
@@ -259,7 +279,11 @@ public class Profile : MonoBehaviour
             m_RightPanel_Badge.text = playerProfile.Badges == 0 ? "Not Available" : playerProfile.Badges.ToString();
             m_RightPanel_IsMVP.SetActive(playerProfile.IsMVP);
 
+            Debug.Log("Before SetCourtCheckedInAndBadgeStatus");
+
             SetCourtCheckedInAndBadgeStatus(playerProfile);
+
+            Debug.Log("After SetCourtCheckedInAndBadgeStatus");
         }
 
         m_Connected.text = PlayerPrefs.GetInt("IsLoggedIn", 0) == 0 ? string.Empty : "Connected";

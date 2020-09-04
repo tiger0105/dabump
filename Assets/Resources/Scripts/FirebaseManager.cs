@@ -1,6 +1,7 @@
 ﻿using AppleAuth.IOS;
 using AppleAuth.IOS.Enums;
 using AppleAuth.IOS.Interfaces;
+using AppleAuth.IOS.NativeMessages;
 using Facebook.Unity;
 using Firebase;
 using Firebase.Auth;
@@ -89,6 +90,16 @@ public class FirebaseManager : MonoBehaviour
             }
         });
 #endif
+
+        _scheduler = new OnDemandMessageHandlerScheduler();
+        var deserializer = new PayloadDeserializer();
+        _appleAuthManager = new AppleAuthManager(deserializer, _scheduler);
+    }
+
+    private void Update()
+    {
+        if (_scheduler != null)
+            _scheduler.Update();
     }
 
     private void InitializeFirebaseAndFetchData()
@@ -125,14 +136,10 @@ public class FirebaseManager : MonoBehaviour
             auth.SignOut();
         }
         auth = null;
-        if (firestore != null)
-        {
-            firestore.TerminateAsync();
-            firestore.ClearPersistenceAsync();
-        }
+
         Instance = null;
     }
-
+        
     private void OnApplicationQuit()
     {
         FirebaseApp.DefaultInstance.Dispose();
