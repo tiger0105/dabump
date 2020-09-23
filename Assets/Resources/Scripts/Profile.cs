@@ -201,9 +201,13 @@ public class Profile : MonoBehaviour
     public IEnumerator GetProfileAsync()
     {
         m_LoadingBar.SetActive(true);
-
+#if UNITY_EDITOR
+        string userId = PlayerPrefs.GetString("UserID", "X6iO1w2GebNDkf4nQsWLYqovIQh2");
+        string userName = PlayerPrefs.GetString("UserName", "Sweetmei Sprietsma");
+#else
         string userId = PlayerPrefs.GetString("UserID", string.Empty);
         string userName = PlayerPrefs.GetString("UserName", string.Empty);
+#endif
         if (userId == string.Empty)
         {
             m_LoadingBar.SetActive(false);

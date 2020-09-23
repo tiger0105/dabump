@@ -148,7 +148,10 @@ public class FirebaseManager : MonoBehaviour
     #region Google SignIn
     public void OnGoogleSignIn()
     {
-        //StartCoroutine(Profile.Instance.GetProfileAsync());
+#if UNITY_EDITOR
+        StartCoroutine(Profile.Instance.GetProfileAsync());
+        return;
+#endif
 
         GoogleSignIn.Configuration = configuration;
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -202,9 +205,9 @@ public class FirebaseManager : MonoBehaviour
             StartCoroutine(Profile.Instance.GetProfileAsync());
         });
     }
-    #endregion
+#endregion
 
-    #region Facebook SignIn
+#region Facebook SignIn
     public void OnFacebookSignIn()
     {
         Main.Instance.ShowLoginLoadingBar();
@@ -293,9 +296,9 @@ public class FirebaseManager : MonoBehaviour
             Time.timeScale = 1;
         }
     }
-    #endregion
+#endregion
 
-    #region Apple SignIn
+#region Apple SignIn
     public void OnAppleSignIn()
     {
         Main.Instance.ShowLoginLoadingBar();
@@ -350,9 +353,9 @@ public class FirebaseManager : MonoBehaviour
 
         Main.Instance.HideLoginLoadingBar();
     }
-    #endregion
+#endregion
 
-    #region Courts
+#region Courts
     private async Task FetchCourtsAsync()
     {
         CollectionReference courtsRef = firestore.Collection("Courts");
@@ -459,7 +462,7 @@ public class FirebaseManager : MonoBehaviour
     }
 #endregion
 
-    #region Players Information
+#region Players Information
     private async Task FetchPlayersInfoAsync()
     {
         CollectionReference playersRef = firestore.Collection("Profiles");
@@ -538,6 +541,8 @@ public class FirebaseManager : MonoBehaviour
 
                 int.TryParse(player["Badges"].ToString(), out int badges);
                 int.TryParse(player["CheckedInCourt"].ToString(), out int checkedInCourt);
+
+                Debug.Log(player["UserID"].ToString());
 
                 m_PlayerCardList.Add(new PlayerProfile(player["UserID"].ToString(), player["Name"].ToString(), imagePath, playerIndex + 1, badges,
                     playerIndex == 0, checkedInCourt, player["VisitedCourts"].ToString(), player["Status"].ToString(), player["TeamPosition"].ToString(), player["CardTopColor"].ToString(), player["CardBottomColor"].ToString()));

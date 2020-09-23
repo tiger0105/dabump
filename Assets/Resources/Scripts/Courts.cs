@@ -64,12 +64,15 @@ public class Courts : MonoBehaviour
     {
 #if UNITY_EDITOR
         //#if !FOR_GPS_TEST
-        string userId = PlayerPrefs.GetString("UserID", string.Empty);
+        string userId = PlayerPrefs.GetString("UserID", "X6iO1w2GebNDkf4nQsWLYqovIQh2");
         if (userId == string.Empty)
         {
+            Debug.Log("1");
             m_CourtDetail_LoadingBar.SetActive(false);
             yield break;
         }
+
+        Debug.Log("2");
 
         PlayerProfile myProfile = FirebaseManager.Instance.m_PlayerCardList.FirstOrDefault(item => item.UserID == userId);
         if (myProfile != null)
@@ -86,10 +89,12 @@ public class Courts : MonoBehaviour
             myProfile.VisitedCourts = string.Join(",", visitedCourts.ToArray());
             myProfile.Badges = visitedCourts.Count;
             myProfile.Status = m_CourtDetail_PlayerStatus.options[m_CourtDetail_PlayerStatus.value].text;
+            Debug.Log("3");
             _ = FirebaseManager.Instance.SetCheckInCourtAsync(myProfile);
         }
         else
         {
+            Debug.Log("4");
             m_CourtDetail_LoadingBar.SetActive(false);
             m_LocationServiceFailedPopup.GetComponent<Animator>().Play("Modal Window In");
             m_LocationServiceFailedPopup_MessageText.text = "Unexpected error occured. Please restart the application.";
@@ -386,7 +391,11 @@ public class Courts : MonoBehaviour
             }
         }
 
+#if UNITY_EDITOR
+        string userId = PlayerPrefs.GetString("UserID", "X6iO1w2GebNDkf4nQsWLYqovIQh2");
+#else
         string userId = PlayerPrefs.GetString("UserID", string.Empty);
+#endif
         PlayerProfile myProfile = FirebaseManager.Instance.m_PlayerCardList.FirstOrDefault(item => item.UserID == userId);
         if (myProfile != null)
         {
@@ -431,6 +440,7 @@ public class Courts : MonoBehaviour
             m_CourtDetail_CheckInButton.GetComponent<Button>().onClick.RemoveAllListeners();
             m_CourtDetail_CheckInButton.GetComponent<Button>().onClick.AddListener(delegate
             {
+                Debug.Log("CheckIn");
                 CheckIn(courtId);
             });
 
