@@ -42,6 +42,7 @@ public class Courts : MonoBehaviour
     [SerializeField] private GameObject m_CourtDetail_PlayerMVP;
     [SerializeField] private TMP_Dropdown m_CourtDetail_PlayerStatus;
     [SerializeField] private Button m_CourtDetail_CheckInButton;
+    [SerializeField] private Button m_CourtDetail_CheckOutButton;
 
     [SerializeField] public GameObject m_CourtDetail_LoadingBar;
 
@@ -67,12 +68,9 @@ public class Courts : MonoBehaviour
         string userId = PlayerPrefs.GetString("UserID", "X6iO1w2GebNDkf4nQsWLYqovIQh2");
         if (userId == string.Empty)
         {
-            Debug.Log("1");
             m_CourtDetail_LoadingBar.SetActive(false);
             yield break;
         }
-
-        Debug.Log("2");
 
         PlayerProfile myProfile = FirebaseManager.Instance.m_PlayerCardList.FirstOrDefault(item => item.UserID == userId);
         if (myProfile != null)
@@ -89,12 +87,10 @@ public class Courts : MonoBehaviour
             myProfile.VisitedCourts = string.Join(",", visitedCourts.ToArray());
             myProfile.Badges = visitedCourts.Count;
             myProfile.Status = m_CourtDetail_PlayerStatus.options[m_CourtDetail_PlayerStatus.value].text;
-            Debug.Log("3");
             _ = FirebaseManager.Instance.SetCheckInCourtAsync(myProfile);
         }
         else
         {
-            Debug.Log("4");
             m_CourtDetail_LoadingBar.SetActive(false);
             m_LocationServiceFailedPopup.GetComponent<Animator>().Play("Modal Window In");
             m_LocationServiceFailedPopup_MessageText.text = "Unexpected error occured. Please restart the application.";
@@ -444,17 +440,22 @@ public class Courts : MonoBehaviour
                 CheckIn(courtId);
             });
 
+            m_CourtDetail_CheckOutButton.GetComponent<Button>().onClick.RemoveAllListeners();
+            m_CourtDetail_CheckOutButton.GetComponent<Button>().onClick.AddListener(delegate
+            {
+                Debug.Log("CheckOut");
+                CheckOut();
+            });
+
             if (myProfile.CheckedInCourt == courtId)
             {
-                m_CourtDetail_CheckInButton.GetComponent<CanvasGroup>().alpha = 0.3f;
-                m_CourtDetail_CheckInButton.GetComponent<CanvasGroup>().interactable = false;
-                m_CourtDetail_CheckInButton.GetComponent<CanvasGroup>().blocksRaycasts = false;
+                m_CourtDetail_CheckInButton.gameObject.SetActive(false);
+                m_CourtDetail_CheckOutButton.gameObject.SetActive(true);
             }
             else
             {
-                m_CourtDetail_CheckInButton.GetComponent<CanvasGroup>().alpha = 1;
-                m_CourtDetail_CheckInButton.GetComponent<CanvasGroup>().interactable = true;
-                m_CourtDetail_CheckInButton.GetComponent<CanvasGroup>().blocksRaycasts = true;
+                m_CourtDetail_CheckInButton.gameObject.SetActive(true);
+                m_CourtDetail_CheckOutButton.gameObject.SetActive(false);
             }
         }
 
@@ -475,6 +476,13 @@ public class Courts : MonoBehaviour
         m_CourtDetail_LoadingBar.SetActive(true);
 
         StartCoroutine(StartLocationServiceAndCheckIn(courtId));
+    }
+
+    private void CheckOut()
+    {
+        m_CourtDetail_LoadingBar.SetActive(true);
+
+        StartCoroutine(StartLocationServiceAndCheckIn(0));
     }
 
     public void SetCourtImage(int courtId, string imagePath)
