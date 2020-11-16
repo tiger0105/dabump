@@ -1,5 +1,4 @@
 <projectSettings>
-  <projectSetting />
   <projectSetting name="com.google.external-dependency-managerAnalyticsEnabled" value="False" />
   <projectSetting name="com.google.firebaseAnalyticsCookie" value="31c07050c4074555980b7c557b7fa73a" />
   <projectSetting name="com.google.firebaseAnalyticsEnabled" value="True" />
