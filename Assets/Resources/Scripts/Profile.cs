@@ -228,7 +228,7 @@ public class Profile : MonoBehaviour
                 yield break;
             }
 
-            FirebaseManager.Instance.DebugLog(www.downloadHandler.text);
+            FirebaseManager.Instance.DebugLog("GetProfileAsync: " + www.downloadHandler.text);
 
             PlayerProfile playerProfile = JsonUtility.FromJson<PlayerProfile>(www.downloadHandler.text);
 

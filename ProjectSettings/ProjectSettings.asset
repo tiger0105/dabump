@@ -172,7 +172,7 @@ PlayerSettings:
     iPhone: com.lacey.dabump
   buildNumber:
     iPhone: 4
-  AndroidBundleVersionCode: 3
+  AndroidBundleVersionCode: 4
   AndroidMinSdkVersion: 21
   AndroidTargetSdkVersion: 0
   AndroidPreferredInstallLocation: 1

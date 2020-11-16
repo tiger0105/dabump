@@ -220,6 +220,7 @@ public class FirebaseManager : MonoBehaviour
         if (result.Cancelled)
         {
             Main.Instance.HideLoginLoadingBar();
+            DebugLog("FB Login result.Cancelled: " + result.Cancelled);
             return;
         }
 
@@ -244,13 +245,17 @@ public class FirebaseManager : MonoBehaviour
             if (task.IsCanceled)
             {
                 Main.Instance.HideLoginLoadingBar();
+                DebugLog("FB Login task.IsCanceled: " + task.IsCanceled);
                 return;
             }
             if (task.IsFaulted)
             {
                 Main.Instance.HideLoginLoadingBar();
+                DebugLog("FB Login task.IsFaulted: " + task.IsFaulted);
                 return;
             }
+
+            DebugLog("FB Login DisplayName: " + task.Result.DisplayName);
 
             user = auth.CurrentUser;
 
@@ -736,6 +741,6 @@ public class FirebaseManager : MonoBehaviour
 
     public void DebugLog(string text)
     {
-        GetComponentInChildren<TextMeshProUGUI>().text += text + "\n";
+        //GetComponentInChildren<TextMeshProUGUI>().text += text + "\n";
     }
 }
