@@ -124,13 +124,13 @@ public class Profile : MonoBehaviour
                     {
                         if (task.IsCanceled)
                         {
-                            Debug.Log("DeleteAsync was canceled.");
+                            FirebaseManager.Instance.DebugLog("DeleteAsync was canceled.");
                             return;
                         }
 
                         if (task.IsFaulted)
                         {
-                            Debug.Log("DeleteAsync encountered an error: " + task.Exception);
+                            FirebaseManager.Instance.DebugLog("DeleteAsync encountered an error: " + task.Exception);
                             return;
                         }
 
@@ -173,14 +173,14 @@ public class Profile : MonoBehaviour
             }
         }
 
-        Debug.Log("Profile Image Assigned");
+        FirebaseManager.Instance.DebugLog("Profile Image Assigned");
 
         byte[] imageBytes = dest.ToArray();
 
         Texture2D texture = new Texture2D(296, 370);
         texture.LoadImage(imageBytes);
 
-        Debug.Log("Profile Image Loaded");
+        FirebaseManager.Instance.DebugLog("Profile Image Loaded");
 
         float aspectRatio = (float)texture.width / texture.height;
 
@@ -228,7 +228,7 @@ public class Profile : MonoBehaviour
                 yield break;
             }
 
-            Debug.Log(www.downloadHandler.text);
+            FirebaseManager.Instance.DebugLog(www.downloadHandler.text);
 
             PlayerProfile playerProfile = JsonUtility.FromJson<PlayerProfile>(www.downloadHandler.text);
 
@@ -251,31 +251,31 @@ public class Profile : MonoBehaviour
             m_CardPosition.text = m_TeamPositionSelector.elements[index];
             m_CardPosition.color = SetInvertedColor(m_CardBottomColor.color);
 
-            Debug.Log("Player Profile From Json Worked");
+            FirebaseManager.Instance.DebugLog("Player Profile From Json Worked");
 
             int rank = 0;
-            Debug.Log(playerProfile.Image);
+            FirebaseManager.Instance.DebugLog(playerProfile.Image);
             if (FirebaseManager.Instance.m_CourtList.Count > 0)
             {
-                Debug.Log("before setting up a rank");
+                FirebaseManager.Instance.DebugLog("before setting up a rank");
                 if (FirebaseManager.Instance.m_PlayerCardList.Count > 0)
                 {
                     PlayerProfile p = FirebaseManager.Instance.m_PlayerCardList.FirstOrDefault(item => item.UserID == userId);
                     if (p != null)
                         rank = p.Rank;
                 }
-                Debug.Log("after setting up a rank");
+                FirebaseManager.Instance.DebugLog("after setting up a rank");
             }
             m_CardRank.text = rank == 0 ? "Rank NA" : ("Rank " + rank);
             
             if (playerProfile.Image.Length > 0)
             {
-                Debug.Log("if player image is valid");
+                FirebaseManager.Instance.DebugLog("if player image is valid");
                 SetProfileImage(playerProfile.Image);
                 m_UploadCardPhotoButton.transform.GetChild(0).gameObject.SetActive(false);
             }
 
-            Debug.Log("After Setting up Upload card photo button");
+            FirebaseManager.Instance.DebugLog("After Setting up Upload card photo button");
 
             m_RightPanel_Name.text = playerProfile.Name;
             m_RightPanel_TeamPosition.text = playerProfile.TeamPosition.ToUpper();
@@ -283,11 +283,11 @@ public class Profile : MonoBehaviour
             m_RightPanel_Badge.text = playerProfile.Badges == 0 ? "Not Available" : playerProfile.Badges.ToString();
             m_RightPanel_IsMVP.SetActive(playerProfile.IsMVP);
 
-            Debug.Log("Before SetCourtCheckedInAndBadgeStatus");
+            FirebaseManager.Instance.DebugLog("Before SetCourtCheckedInAndBadgeStatus");
 
             SetCourtCheckedInAndBadgeStatus(playerProfile);
 
-            Debug.Log("After SetCourtCheckedInAndBadgeStatus");
+            FirebaseManager.Instance.DebugLog("After SetCourtCheckedInAndBadgeStatus");
         }
 
         m_Connected.text = PlayerPrefs.GetInt("IsLoggedIn", 0) == 0 ? string.Empty : "Connected";

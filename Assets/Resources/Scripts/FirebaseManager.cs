@@ -86,7 +86,7 @@ public class FirebaseManager : MonoBehaviour
             }
             else
             {
-                Debug.Log("Could not resolve all Firebase dependencies: " + dependencyStatus);
+                DebugLog("Could not resolve all Firebase dependencies: " + dependencyStatus);
             }
         });
 #endif
@@ -430,11 +430,11 @@ public class FirebaseManager : MonoBehaviour
         {
             if (resultTask.IsCanceled)
             {
-                Debug.Log("DownloadCourtImageAsync() -> imageReference.GetFileAsync() was canceled.");
+                DebugLog("DownloadCourtImageAsync() -> imageReference.GetFileAsync() was canceled.");
             }
             else if (resultTask.IsFaulted)
             {
-                Debug.Log("DownloadCourtImageAsync() -> imageReference.GetFileAsync() encountered an error: " + resultTask.Exception);
+                DebugLog("DownloadCourtImageAsync() -> imageReference.GetFileAsync() encountered an error: " + resultTask.Exception);
             }
             else
             {
@@ -481,12 +481,12 @@ public class FirebaseManager : MonoBehaviour
         {
             if (task.IsCanceled)
             {
-                Debug.Log("FetchPlayersInfoAsync() -> query.GetSnapshotAsync() was canceled.");
+                DebugLog("FetchPlayersInfoAsync() -> query.GetSnapshotAsync() was canceled.");
                 return;
             }
             if (task.IsFaulted)
             {
-                Debug.Log("FetchPlayersInfoAsync() -> query.GetSnapshotAsync() encountered an error: " + task.Exception);
+                DebugLog("FetchPlayersInfoAsync() -> query.GetSnapshotAsync() encountered an error: " + task.Exception);
                 return;
             }
 
@@ -542,7 +542,7 @@ public class FirebaseManager : MonoBehaviour
                 int.TryParse(player["Badges"].ToString(), out int badges);
                 int.TryParse(player["CheckedInCourt"].ToString(), out int checkedInCourt);
 
-                Debug.Log(player["UserID"].ToString());
+                DebugLog(player["UserID"].ToString());
 
                 m_PlayerCardList.Add(new PlayerProfile(player["UserID"].ToString(), player["Name"].ToString(), imagePath, playerIndex + 1, badges,
                     playerIndex == 0, checkedInCourt, player["VisitedCourts"].ToString(), player["Status"].ToString(), player["TeamPosition"].ToString(), player["CardTopColor"].ToString(), player["CardBottomColor"].ToString()));
@@ -594,17 +594,17 @@ public class FirebaseManager : MonoBehaviour
             {
                 if (t.IsCanceled)
                 {
-                    Debug.Log("OnGoogleAuthenticationFinished t.IsCanceled");
+                    DebugLog("OnGoogleAuthenticationFinished t.IsCanceled");
                     return;
                 }
 
                 if (t.IsFaulted)
                 {
-                    Debug.Log("OnGoogleAuthenticationFinished t.IsFaulted");
+                    DebugLog("OnGoogleAuthenticationFinished t.IsFaulted");
                     return;
                 }
 
-                Debug.Log("Display name updated successfully");
+                DebugLog("Display name updated successfully");
             });
 
         }
